@@ -1,8 +1,8 @@
 import type {Metadata} from 'next';
-import { CartProvider } from '@/context/CartContext';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 import { FirebaseProvider } from '@/firebase';
+import AppLayout from './AppLayout';
 
 export const metadata: Metadata = {
   title: 'Cheezious Connect',
@@ -23,9 +23,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseProvider>
-          <CartProvider>
+          <AppLayout>
             {children}
-          </CartProvider>
+          </AppLayout>
         </FirebaseProvider>
         <Toaster />
       </body>
