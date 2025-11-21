@@ -11,7 +11,7 @@ import Link from "next/link";
 import { branches } from "@/lib/data";
 import type { PlacedOrder } from "@/lib/types";
 import { useFirebase } from "@/firebase";
-import { collection, serverTimestamp, addDoc } from "firebase/firestore";
+import { collection, serverTimestamp } from "firebase/firestore";
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function OrderConfirmationPage() {
@@ -51,9 +51,14 @@ export default function OrderConfirmationPage() {
         const ordersCollection = collection(firestore, "orders");
         const docRef = await addDocumentNonBlocking(ordersCollection, newOrder);
 
+        // Ensure docRef is not null before proceeding
+        if (!docRef) {
+          throw new Error("Failed to create order document.");
+        }
+
         const orderItemsCollection = collection(firestore, `orders/${docRef.id}/order_items`);
         
-        for (const item of items) {
+        const itemPromises = items.map((item) => {
             const orderItem = {
                 orderId: docRef.id,
                 menuItemId: item.id,
@@ -61,8 +66,12 @@ export default function OrderConfirmationPage() {
                 itemPrice: item.price,
                 name: item.name,
             };
-            await addDocumentNonBlocking(orderItemsCollection, orderItem);
-        }
+            // Return the promise from addDocumentNonBlocking
+            return addDocumentNonBlocking(orderItemsCollection, orderItem);
+        });
+
+        // Wait for all items to be added
+        await Promise.all(itemPromises);
 
         const placedOrder: PlacedOrder = {
             orderNumber,
