@@ -14,7 +14,6 @@ interface FirebaseProviderProps {
 
 // Combined state for the Firebase context
 export interface FirebaseContextState {
-  areServicesAvailable: boolean;
   firebaseApp: FirebaseApp | null;
   firestore: Firestore | null;
   auth: Auth | null;
@@ -49,70 +48,66 @@ const FullscreenLoader = () => (
 
 
 export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children }) => {
-  const [userAuthState, setUserAuthState] = useState<{
+  const [authState, setAuthState] = useState<{
     user: User | null;
-    isUserLoading: boolean;
-    userError: Error | null;
+    isLoading: boolean;
+    error: Error | null;
   }>({
     user: null,
-    isUserLoading: true,
-    userError: null,
+    isLoading: true,
+    error: null,
   });
 
-  const firebaseServices = useMemo(() => {
-    return initializeFirebase();
-  }, []);
+  // Initialize Firebase services once
+  const services = useMemo(() => initializeFirebase(), []);
 
   useEffect(() => {
-    if (!firebaseServices.auth) {
-      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth service not available.") });
+    if (!services.auth) {
+      setAuthState({ user: null, isLoading: false, error: new Error("Auth service not available.") });
       return;
     }
     
-    // Set up the real-time auth state listener
     const unsubscribe = onAuthStateChanged(
-      firebaseServices.auth,
+      services.auth,
       (firebaseUser) => {
         if (firebaseUser) {
           // User is signed in.
-          setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+          setAuthState({ user: firebaseUser, isLoading: false, error: null });
         } else {
           // User is signed out, so attempt to sign them in anonymously.
-          signInAnonymously(firebaseServices.auth).catch((error) => {
+          signInAnonymously(services.auth).catch((error) => {
              console.error("FirebaseProvider: Anonymous sign-in failed:", error);
-             setUserAuthState({ user: null, isUserLoading: false, userError: error });
+             setAuthState({ user: null, isLoading: false, error });
           });
         }
       },
       (error) => {
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
-        setUserAuthState({ user: null, isUserLoading: false, userError: error });
+        setAuthState({ user: null, isLoading: false, error });
       }
     );
     
     return () => unsubscribe();
-  }, [firebaseServices.auth]);
+  }, [services.auth]);
 
   const contextValue = useMemo((): FirebaseContextState => {
-    const servicesAvailable = !!(firebaseServices.firebaseApp && firebaseServices.firestore && firebaseServices.auth);
+    // Only provide the services if authentication is complete and successful
+    const servicesAvailable = !authState.isLoading && !!authState.user;
+    
     return {
-      areServicesAvailable: servicesAvailable,
-      firebaseApp: servicesAvailable ? firebaseServices.firebaseApp : null,
-      firestore: servicesAvailable ? firebaseServices.firestore : null,
-      auth: servicesAvailable ? firebaseServices.auth : null,
-      user: userAuthState.user,
-      isUserLoading: userAuthState.isUserLoading,
-      userError: userAuthState.userError,
+      firebaseApp: servicesAvailable ? services.firebaseApp : null,
+      firestore: servicesAvailable ? services.firestore : null,
+      auth: servicesAvailable ? services.auth : null,
+      user: authState.user,
+      isUserLoading: authState.isLoading,
+      userError: authState.error,
     };
-  }, [firebaseServices, userAuthState]);
-
-  // Only render children when firebase is initialized and user state is determined.
-  const canRenderChildren = contextValue.areServicesAvailable && !userAuthState.isUserLoading;
+  }, [services, authState]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
-      {canRenderChildren ? children : <FullscreenLoader />}
+      {contextValue.isUserLoading ? <FullscreenLoader /> : children}
     </FirebaseContext.Provider>
   );
 };
@@ -124,8 +119,12 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
 
-  if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
-    throw new Error('Firebase core services not available. Check FirebaseProvider props.');
+  // If services are not available yet (still loading), throw an error.
+  // This is stricter and safer. The provider should show a loader.
+  if (!context.firebaseApp || !context.firestore || !context.auth) {
+    // This case should ideally not be hit if the provider shows a loader,
+    // but it's a good safeguard.
+    throw new Error('Firebase services are not available. This is likely due to an initialization or authentication error.');
   }
 
   return {
@@ -162,6 +161,10 @@ export function useMemoFirebase<T>(factory: () => T, deps: React.DependencyList)
 }
 
 export const useUser = (): UserHookResult => {
-  const { user, isUserLoading, userError } = useFirebase();
+  const context = useContext(FirebaseContext);
+   if (context === undefined) {
+    throw new Error('useUser must be used within a FirebaseProvider.');
+  }
+  const { user, isUserLoading, userError } = context;
   return { user, isUserLoading, userError };
 };
