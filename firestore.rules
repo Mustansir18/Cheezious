@@ -100,21 +100,27 @@ service cloud.firestore {
     }
 
     /**
-     * @description Manages customer orders. Any authenticated user can create an order, and any
-     *              authenticated user can view and update orders to support the cashier workflow.
+     * @description Rules for the entire 'orders' collection, primarily for querying/listing.
      * @path /orders
-     * @allow (list) Any authenticated user can query and view all orders, which is necessary for the cashier dashboard.
-     * @principle Allows authenticated users to work with the collection of orders.
+     * @allow (list) Any signed-in user (e.g., a cashier) can list all orders to display on the dashboard.
+     * @allow (create) Any signed-in user can create a new order.
+     */
+    match /orders {
+        allow list: if isSignedIn();
+        allow create: if isSignedIn();
+    }
+    
+    /**
+     * @description Manages individual customer orders. This applies to single-document operations.
+     * @path /orders/{orderId}
+     * @allow (get, update) Any authenticated user can get or update an order to support the cashier workflow.
+     * @deny (delete) Deleting orders is disallowed to prevent accidental data loss.
      */
     match /orders/{orderId} {
       allow get: if isSignedIn();
-      allow create: if isSignedIn();
       allow update: if isSignedIn() && resource != null;
-      allow delete: if false;
+      allow delete: if false; // Disallow direct deletion
       
-      // Grant list access to the entire collection for signed-in users (cashiers)
-      allow list: if isSignedIn();
-
       /**
        * @description Manages the items within an order. Access is granted if the user is signed in
        *              and the parent order document exists.
