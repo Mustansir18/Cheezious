@@ -98,18 +98,16 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if false;
     }
-
+    
     /**
      * @description Manages customer orders. Any authenticated user can create an order, and any
      *              authenticated user can view and update orders to support the cashier workflow.
-     * @path /orders/{orderId}
-     * @allow (create) An anonymous but authenticated user places a new order.
-     * @deny (create) An unauthenticated user attempts to place an order.
-     * @deny (delete) Any user attempts to delete an order document.
-     * @principle Allows any authenticated user to create/update to support a shared-access model for cashiers. Deletes are disabled for safety.
+     * @path /orders
+     * @allow (list) Any authenticated user can list all orders for the cashier dashboard.
+     * @principle Allows authenticated users to list all orders for the shared-access cashier model.
      */
     match /orders/{orderId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn() && resource != null;
       allow delete: if false;
