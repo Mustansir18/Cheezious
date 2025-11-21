@@ -12,7 +12,7 @@ import Link from "next/link";
 import { branches } from "@/lib/data";
 import type { PlacedOrder } from "@/lib/types";
 import { useFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, serverTimestamp, addDoc } from "firebase/firestore";
+import { collection, serverTimestamp, addDoc, DocumentReference } from "firebase/firestore";
 
 export default function OrderConfirmationPage() {
   const { items, cartTotal, branchId, orderType, clearCart } = useCart();
@@ -56,15 +56,13 @@ export default function OrderConfirmationPage() {
                 operation: 'create',
                 requestResourceData: newOrder
             }));
-            // We explicitly re-throw or return a value indicating failure.
             // Here, returning null and checking for it is a clean way to stop execution.
             return null;
         });
 
+        // Ensure docRef is not null before proceeding
         if (!docRef) {
           // The error has been emitted, so we just stop here.
-          // The user will see the detailed error overlay.
-          console.error("Failed to create order document due to permissions or other error.");
           return; 
         }
 
