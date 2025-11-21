@@ -1,0 +1,136 @@
+/**
+ * Core Philosophy: This ruleset is designed for the Cheezious Connect application, which operates
+ * with anonymous user sessions. The security model assumes two primary contexts: a public, read-only
+ * context for browsing data like menus and branches, and an authenticated (but anonymous) context
+ * for creating and managing orders. The rules facilitate a cashier workflow where any authenticated
+ * device can view and update order statuses, reflecting the app's focus on in-store operational
+ * efficiency over individual user data ownership.
+ *
+ * Data Structure: The data is organized into logical, top-level collections for branches, menu
+ * categories, menu items, and orders. Order items are stored in a subcollection under each order
+ * document to maintain a clear hierarchical relationship.
+ *
+ * Key Security Decisions:
+ * - Public Data: All menu and branch information (`/branches`, `/menu_categories`, `/menu_items`)
+ *   is publicly readable by anyone, including unauthenticated users, to allow for easy menu browsing.
+ *   Writes to this data are disabled from the client-side and must be performed with Admin SDKs.
+ * - Anonymous Order Management: Any user who has started an anonymous session (`isSignedIn()`) can
+ *   create a new order. Crucially, any signed-in user can also view and update any existing order.
+ *   This is a deliberate choice to support a "cashier screen" model where multiple devices may need
+ *   to manage the queue of all active orders without specific user ownership.
+ * - Destructive Operations: To prevent accidental data loss in a shared-access model, direct
+ *   deletion of orders and order items is disallowed. Orders should be managed by updating their
+ *   status field (e.g., to 'Completed' or 'Cancelled').
+ *
+ * Denormalization for Authorization: This ruleset does not require denormalization for authorization
+ * as there is no concept of user ownership or resource-specific roles. All authorization is based on
+ * a simple authenticated vs. unauthenticated state.
+ *
+ * Structural Segregation: The use of separate top-level collections for public menu data versus
+ * operational order data provides a clear and secure separation of concerns. This prevents any
+ * possibility of leaking order information through public list queries.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    /**
+     * Checks if the user is signed in (can be an anonymous session).
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if a parent order document exists.
+     * Used to ensure order items are not orphaned.
+     */
+    function orderExists(orderId) {
+      return exists(/databases/$(database)/documents/orders/$(orderId));
+    }
+
+
+    /**
+     * @description Publicly readable information about each restaurant branch. This data is considered
+     *              public and is managed by administrators, not clients.
+     * @path /branches/{branchId}
+     * @allow (get) Any user, authenticated or not, can read branch details.
+     * @deny (create) A client application attempts to create a new branch document.
+     * @principle Public read-only data. All write operations are denied to protect administrative data from client modification.
+     */
+    match /branches/{branchId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Publicly readable menu categories (e.g., 'Burgers', 'Sides'). This data is
+     *              considered public and is managed by administrators, not clients.
+     * @path /menu_categories/{categoryId}
+     * @allow (list) Any user, authenticated or not, can list all menu categories.
+     * @deny (update) A client application attempts to change the name of a category.
+     * @principle Public read-only data. All write operations are denied to protect administrative data from client modification.
+     */
+    match /menu_categories/{categoryId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Publicly readable individual menu items. This data is considered public and
+     *              is managed by administrators, not clients.
+     * @path /menu_items/{menuItemId}
+     * @allow (get) Any user, authenticated or not, can read details of a specific menu item.
+     * @deny (delete) A client application attempts to delete a menu item.
+     * @principle Public read-only data. All write operations are denied to protect administrative data from client modification.
+     */
+    match /menu_items/{menuItemId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Manages customer orders. Any authenticated user can create an order, and any
+     *              authenticated user can view and update orders to support the cashier workflow.
+     * @path /orders/{orderId}
+     * @allow (create) An anonymous but authenticated user places a new order.
+     * @deny (create) An unauthenticated user attempts to place an order.
+     * @deny (delete) Any user attempts to delete an order document.
+     * @principle Allows any authenticated user to create/update to support a shared-access model for cashiers. Deletes are disabled for safety.
+     */
+    match /orders/{orderId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if false;
+
+      /**
+       * @description Manages the items within an order. Access is granted if the user is signed in
+       *              and the parent order document exists.
+       * @path /orders/{orderId}/order_items/{orderItemId}
+       * @allow (create) An authenticated user adds an item to an existing order, and the item's internal `orderId` matches the document path.
+       * @deny (create) A user attempts to add an item to an order that does not exist.
+       * @deny (update) A user attempts to change the `orderId` of an item after it has been created.
+       * @principle Enforces relational integrity by ensuring items are only associated with existing orders and cannot be moved between them.
+       */
+      match /order_items/{orderItemId} {
+        allow get: if isSignedIn() && orderExists(orderId);
+        allow list: if isSignedIn() && orderExists(orderId);
+        allow create: if isSignedIn() && orderExists(orderId) && request.resource.data.orderId == orderId;
+        allow update: if isSignedIn() && resource != null && orderExists(orderId) && request.resource.data.orderId == resource.data.orderId;
+        allow delete: if false;
+      }
+    }
+  }
+}
