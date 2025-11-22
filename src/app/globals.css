@@ -95,4 +95,14 @@ body {
     .print\:hidden {
         display: none;
     }
+    body > *, .print-content > * {
+        visibility: hidden;
+    }
+    .print-content {
+        visibility: visible;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
 }
