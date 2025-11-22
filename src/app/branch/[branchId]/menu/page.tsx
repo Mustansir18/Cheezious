@@ -8,10 +8,11 @@ import { menuItems } from "@/lib/data";
 import type { OrderType } from "@/lib/types";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Pizza, Beef, Drumstick, GlassWater, Award } from 'lucide-react';
+import { Pizza, Beef, Drumstick, GlassWater, Award, Sparkles } from 'lucide-react';
 
 const categoryIcons: { [key: string]: React.ReactNode } = {
   Deals: <Award className="mr-2 h-5 w-5" />,
+  Starters: <Sparkles className="mr-2 h-5 w-5" />,
   Pizzas: <Pizza className="mr-2 h-5 w-5" />,
   Burgers: <Beef className="mr-2 h-5 w-5" />,
   Sides: <Drumstick className="mr-2 h-5 w-5" />,
@@ -29,7 +30,7 @@ export default function MenuPage({ params: { branchId } }: { params: { branchId:
     }
   }, [searchParams, branchId, setOrderDetails]);
 
-  const categories = ['Deals', 'Pizzas', 'Burgers', 'Sides', 'Drinks'];
+  const categories = ['Deals', 'Starters', 'Pizzas', 'Burgers', 'Sides', 'Drinks'];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -39,7 +40,7 @@ export default function MenuPage({ params: { branchId } }: { params: { branchId:
       </div>
 
       <Tabs defaultValue={categories[0]} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 h-auto">
           {categories.map((category) => (
             <TabsTrigger key={category} value={category} className="py-2 text-base">
                {categoryIcons[category]} {category}
