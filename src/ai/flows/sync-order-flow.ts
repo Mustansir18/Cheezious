@@ -59,8 +59,8 @@ export async function syncOrderToExternalSystem(input: SyncOrderInput): Promise<
 /**
  * The main Genkit flow for synchronizing order data.
  *
- * In a real-world scenario, this flow would contain the logic to authenticate with
- * and send data to the Dynamics 365 API. For this example, it simulates the process.
+ * This flow sends the order data to an external API endpoint, which is expected
+ * to be a proxy to a local Dynamics 365 RSSU server.
  */
 const syncOrderFlow = ai.defineFlow(
   {
@@ -71,29 +71,50 @@ const syncOrderFlow = ai.defineFlow(
   async (input) => {
     console.log('SYNCING ORDER TO EXTERNAL SYSTEM:', input.orderNumber);
 
-    // TODO: Replace this simulation with a real API call to Dynamics 365.
-    // This would involve:
-    // 1. Setting up authentication (e.g., OAuth2) with the Dynamics 365 API.
-    // 2. Transforming the `input` data to match the expected format of the Dynamics 365 entity.
-    // 3. Making a POST request to the appropriate Dynamics 365 API endpoint.
-    // 4. Handling success and error responses from the API.
+    const apiEndpoint = process.env.DYNAMICS_RSSU_API_ENDPOINT;
 
-    // Simulate a successful API call.
-    const isSuccessful = true; // Change to false to simulate an error.
-
-    if (isSuccessful) {
-      console.log(`Successfully synced order ${input.orderNumber} to external system.`);
-      return {
-        success: true,
-        // In a real scenario, this would be the ID returned by the Dynamics API.
-        externalId: `D365-${input.id}`,
-        message: 'Order synchronized successfully with external system.',
-      };
-    } else {
-      console.error(`Failed to sync order ${input.orderNumber} to external system.`);
+    if (!apiEndpoint) {
+      console.error('DYNAMICS_RSSU_API_ENDPOINT is not set. Skipping synchronization.');
       return {
         success: false,
-        message: 'Failed to connect to the external POS/ERP system.',
+        message: 'API endpoint is not configured. Please set DYNAMICS_RSSU_API_ENDPOINT in your .env file.',
+      };
+    }
+
+    try {
+      // In a real-world scenario, you would handle authentication here,
+      // e.g., by fetching an OAuth token and adding it to the headers.
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': 'Bearer YOUR_AUTH_TOKEN', // Add your auth token here
+        },
+        body: JSON.stringify(input),
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log(`Successfully synced order ${input.orderNumber} to external system.`);
+        return {
+          success: true,
+          // Assuming the external API returns an ID in a field like 'externalId' or 'salesId'
+          externalId: responseData.externalId || `EXT-${input.id}`,
+          message: 'Order synchronized successfully with external system.',
+        };
+      } else {
+        const errorBody = await response.text();
+        console.error(`Failed to sync order ${input.orderNumber}. Status: ${response.status}. Body: ${errorBody}`);
+        return {
+          success: false,
+          message: `Failed to sync with external system. Status: ${response.status}.`,
+        };
+      }
+    } catch (error: any) {
+      console.error(`An error occurred during synchronization: ${error.message}`);
+      return {
+        success: false,
+        message: 'An unexpected network error occurred while trying to connect to the external system.',
       };
     }
   }
