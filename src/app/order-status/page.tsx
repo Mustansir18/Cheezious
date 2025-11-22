@@ -26,7 +26,6 @@ export default function OrderStatusPage() {
       if (storedOrder) {
         setPlacedOrder(JSON.parse(storedOrder));
       } else {
-        // If there's no order in session, we can't show a status. Redirect home.
         router.replace('/');
       }
     } catch (error) {
@@ -35,13 +34,14 @@ export default function OrderStatusPage() {
     }
   }, [router]);
 
-  // 2. Find the full order object from the context once it's loaded
+  // 2. Find the full order object from the context
   const order: Order | undefined = useMemo(() => {
     if (!placedOrder) return undefined;
     return orders.find(o => o.id === placedOrder.orderId);
   }, [orders, placedOrder]);
 
   const status = order?.status;
+  const isLoading = isOrdersLoading || isSettingsLoading || !placedOrder || !order;
 
   // 3. Handle manual printing
   const handlePrint = useCallback(() => {
@@ -57,25 +57,24 @@ export default function OrderStatusPage() {
     document.body.classList.add('printing-active');
     window.print();
     
-    // Use a timeout to ensure the class is removed after the print dialog has had time to close
     setTimeout(() => {
-        if (document.body.contains(printContainer)) {
-            document.body.removeChild(printContainer);
-        }
-        document.body.classList.remove('printing-active');
+      if (document.body.contains(printContainer)) {
+          document.body.removeChild(printContainer);
+      }
+      document.body.classList.remove('printing-active');
     }, 500);
   }, [order]);
   
-  // 4. Handle automatic printing - simplified and more reliable
+  // 4. Handle automatic printing
   useEffect(() => {
-    // This effect runs ONLY when 'order' object gets populated.
-    // At this point, we know settings are also loaded or loading.
-    if (order && !isSettingsLoading && settings.autoPrintReceipts && !printTriggered.current) {
-        // All conditions are met: we have the order, settings are loaded, auto-print is on, and we haven't printed yet.
-        printTriggered.current = true; // Set the flag immediately to prevent re-triggering
+    // This effect runs whenever the loading state changes.
+    // We only want to act when loading is complete.
+    if (!isLoading && order && settings.autoPrintReceipts && !printTriggered.current) {
+        // All conditions met: data is loaded, order exists, auto-print is on, and we haven't printed yet.
+        printTriggered.current = true; // Set the flag immediately to prevent re-triggering.
         handlePrint();
     }
-  }, [order, isSettingsLoading, settings.autoPrintReceipts, handlePrint]);
+  }, [isLoading, order, settings.autoPrintReceipts, handlePrint]);
 
 
   // 5. Play a sound when the order is ready
@@ -95,8 +94,6 @@ export default function OrderStatusPage() {
     }
   }, [status]);
   
-  const isLoading = isOrdersLoading || isSettingsLoading || !placedOrder || !order;
-
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -105,6 +102,17 @@ export default function OrderStatusPage() {
       </div>
     );
   }
+
+  // This check is important for the case where the order is not found
+  if (!order) {
+    return (
+       <div className="flex h-screen items-center justify-center">
+         <p className="text-muted-foreground">Could not find order details.</p>
+         <Button onClick={() => router.push("/")} className="ml-4">New Order</Button>
+       </div>
+    );
+  }
+
 
   const isOrderActive = status === 'Pending' || status === 'Preparing';
   const isOrderReady = status === 'Ready';
@@ -131,21 +139,21 @@ export default function OrderStatusPage() {
         </CardHeader>
         <CardContent>
           <p className="text-lg">
-            Order <span className="font-bold text-primary">#{placedOrder.orderNumber}</span>
+            Order <span className="font-bold text-primary">#{order.orderNumber}</span>
           </p>
           <p className="text-muted-foreground mt-2">
             {isOrderActive
               ? "We'll notify you with a sound when it's ready."
               : isOrderReady
-              ? `Please collect your ${placedOrder.orderType} order at the counter.`
+              ? `Please collect your ${order.orderType} order at the counter.`
               : 'Thank you for your order!'}
           </p>
           
           <div className="mt-6 text-left border rounded-lg p-4 bg-muted/20">
             <h3 className="font-headline font-semibold mb-2">Order Summary</h3>
-            <p><strong>Branch:</strong> {placedOrder.branchName}</p>
-            {placedOrder.tableName && <p><strong>Table:</strong> {placedOrder.tableName}</p>}
-            <p><strong>Total:</strong> <span className="font-bold">RS {placedOrder.total.toFixed(2)}</span></p>
+            <p><strong>Branch:</strong> {placedOrder?.branchName}</p>
+            {placedOrder?.tableName && <p><strong>Table:</strong> {placedOrder.tableName}</p>}
+            <p><strong>Total:</strong> <span className="font-bold">RS {order.totalAmount.toFixed(2)}</span></p>
           </div>
 
         </CardContent>
@@ -170,11 +178,9 @@ export default function OrderStatusPage() {
       
       {/* Hidden receipt for printing */}
       <div className="hidden">
-        {order && (
-            <div id={`printable-receipt-${order.id}`}>
-                <OrderReceipt order={order} />
-            </div>
-        )}
+          <div id={`printable-receipt-${order.id}`}>
+              <OrderReceipt order={order} />
+          </div>
       </div>
     </div>
   );
