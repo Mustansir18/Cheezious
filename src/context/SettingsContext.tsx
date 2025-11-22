@@ -27,13 +27,15 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 const SETTINGS_STORAGE_KEY = 'cheeziousSettings';
 
+const defaultPaymentMethods: PaymentMethod[] = [
+    { id: 'cash', name: 'Cash' },
+    { id: 'card', name: 'Credit/Debit Card' }
+];
+
 const initialSettings: Settings = {
     floors: [],
     tables: [],
-    paymentMethods: [
-        { id: 'cash', name: 'Cash' },
-        { id: 'card', name: 'Credit/Debit Card' }
-    ],
+    paymentMethods: defaultPaymentMethods,
     autoPrintReceipts: false,
 };
 
@@ -46,15 +48,17 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
       if (storedSettings) {
         const parsed = JSON.parse(storedSettings);
-        // Ensure all arrays exist even if they were empty in localStorage
+        
+        // Ensure default payment methods are always present
+        const customMethods = parsed.paymentMethods?.filter((pm: PaymentMethod) => !defaultPaymentMethods.some(dpm => dpm.id === pm.id)) || [];
+        
         setSettings({
             floors: parsed.floors || [],
             tables: parsed.tables || [],
-            paymentMethods: parsed.paymentMethods || initialSettings.paymentMethods,
+            paymentMethods: [...defaultPaymentMethods, ...customMethods],
             autoPrintReceipts: parsed.autoPrintReceipts || false,
         });
       } else {
-        // If nothing is in storage, set the initial state
         setSettings(initialSettings);
       }
     } catch (error) {
@@ -103,6 +107,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const deletePaymentMethod = useCallback((id: string) => {
+    if (defaultPaymentMethods.some(pm => pm.id === id)) {
+        console.warn("Cannot delete a default payment method.");
+        return;
+    }
     setSettings(s => ({ ...s, paymentMethods: s.paymentMethods.filter(pm => pm.id !== id) }));
   }, []);
 

@@ -43,6 +43,8 @@ export default function AdminSettingsPage() {
         }
     };
 
+    const defaultPaymentMethodIds = ['cash', 'card'];
+
     return (
         <div className="container mx-auto p-4 lg:p-8 space-y-8">
             <header>
@@ -193,9 +195,11 @@ export default function AdminSettingsPage() {
                                 <TableRow key={method.id}>
                                     <TableCell>{method.name}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => deletePaymentMethod(method.id)}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
+                                        {!defaultPaymentMethodIds.includes(method.id) && (
+                                            <Button variant="ghost" size="icon" onClick={() => deletePaymentMethod(method.id)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}
