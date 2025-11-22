@@ -22,7 +22,8 @@ const Icon = ({ name, className }: { name: string, className: string }) => {
 };
 
 
-export default function MenuPage({ params: { branchId } }: { params: { branchId: string } }) {
+export default function MenuPage({ params }: { params: { branchId: string } }) {
+  const { branchId } = params;
   const searchParams = useSearchParams();
   const { setOrderDetails } = useCart();
   const { menu, isLoading } = useMenu();

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -9,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export default function TableSelectionPage({ params: { branchId } }: { params: { branchId: string } }) {
+export default function TableSelectionPage({ params }: { params: { branchId: string } }) {
+    const { branchId } = params;
     const { settings, isLoading } = useSettings();
     const { setOrderDetails } = useCart();
     const router = useRouter();
