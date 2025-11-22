@@ -5,52 +5,58 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BarChart4, Package, Settings, Users, Megaphone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-const adminSections = [
-  {
-    title: 'Reporting',
-    description: 'View sales analytics and trends.',
-    href: '/admin/reporting',
-    icon: BarChart4,
-  },
-  {
-    title: 'Menu Management',
-    description: 'Add, edit, or remove menu items.',
-    href: '/admin/menu',
-    icon: Package,
-  },
-  {
-    title: 'Deals & Discounts',
-    description: 'Create and manage promotional deals.',
-    href: '/admin/deals',
-    icon: Megaphone,
-  },
-  {
-    title: 'User Management',
-    description: 'Manage cashier accounts.',
-    href: '/admin/users',
-    icon: Users,
-  },
-  {
-    title: 'Restaurant Settings',
-    description: 'Manage floors, tables, and payments.',
-    href: '/admin/settings',
-    icon: Settings,
-  },
-];
+import { useAuth } from '@/context/AuthContext';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
+
+  const adminSections = [
+    {
+      title: 'Reporting',
+      description: 'View sales analytics and trends.',
+      href: '/admin/reporting',
+      icon: BarChart4,
+    },
+    {
+      title: 'Menu Management',
+      description: 'Add, edit, or remove menu items.',
+      href: '/admin/menu',
+      icon: Package,
+    },
+    {
+      title: 'Deals & Discounts',
+      description: 'Create and manage promotional deals.',
+      href: '/admin/deals',
+      icon: Megaphone,
+    },
+    {
+      title: 'User Management',
+      description: 'Manage admin and cashier accounts.',
+      href: '/admin/users',
+      icon: Users,
+    },
+    {
+      title: 'Restaurant Settings',
+      description: 'Manage floors, tables, and payments.',
+      href: '/admin/settings',
+      icon: Settings,
+      // Only root user can see this
+      hidden: user?.role !== 'root',
+    },
+  ];
 
   return (
     <div className="container mx-auto p-4 lg:p-8">
       <header className="mb-8">
         <h1 className="font-headline text-4xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Select a section to manage your restaurant.</p>
+        <p className="text-muted-foreground">
+            {user?.role === 'root' ? 'Select a section to manage your restaurant.' : 'Manage your assigned branch.'}
+        </p>
       </header>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {adminSections.map((section) => (
+        {adminSections.filter(section => !section.hidden).map((section) => (
           <Card 
             key={section.href} 
             className="group transform cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-xl"

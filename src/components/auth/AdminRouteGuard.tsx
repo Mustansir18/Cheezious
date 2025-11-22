@@ -15,14 +15,14 @@ export function AdminRouteGuard({ children }: { children: React.ReactNode }) {
       if (!user) {
         // Not logged in, redirect to login page
         router.push('/login');
-      } else if (user.role !== 'admin') {
+      } else if (user.role !== 'root' && user.role !== 'admin') {
         // Logged in, but not an admin, redirect to their default page
         router.push('/cashier'); 
       }
     }
   }, [user, isLoading, router]);
 
-  if (isLoading || !user || user.role !== 'admin') {
+  if (isLoading || !user || (user.role !== 'root' && user.role !== 'admin')) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader className="h-12 w-12 animate-spin text-primary" />

@@ -89,6 +89,17 @@ export type PaymentMethod = {
     name: string;
 }
 
+// --- Auth Types ---
+export type UserRole = 'root' | 'admin' | 'cashier';
+
+export type User = {
+    id: string;
+    username: string;
+    password?: string; // Optional because we don't store it client-side for non-root users
+    role: UserRole;
+    branchId?: string; // Assigned branch for admins and cashiers
+};
+
 // --- Types for External System Sync ---
 
 // Defines the schema for a single item within the order for external sync.

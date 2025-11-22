@@ -27,7 +27,7 @@ export default function LoginPage() {
       const user = await login(username, password);
       if (user) {
         toast({ title: 'Login Successful', description: `Welcome back, ${user.username}!` });
-        if (user.role === 'admin') {
+        if (user.role === 'root' || user.role === 'admin') {
           router.push('/admin');
         } else if (user.role === 'cashier') {
           router.push('/cashier');

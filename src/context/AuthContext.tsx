@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import type { User } from '@/lib/types';
+import type { User, UserRole } from '@/lib/types';
 
 // Define the shape of the context
 interface AuthContextType {
@@ -12,7 +12,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<User | null>;
   logout: () => void;
-  addUser: (username: string, password: string, role: 'cashier' | 'admin') => void;
+  addUser: (username: string, password: string, role: UserRole, branchId?: string) => void;
   deleteUser: (id: string) => void;
 }
 
@@ -23,8 +23,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const rootUser: User = {
   id: 'root-user',
   username: 'root',
-  password: 'Faith123$$', // In a real app, this would be a hashed password
-  role: 'admin',
+  password: 'Faith123$$',
+  role: 'root',
 };
 
 const USERS_STORAGE_KEY = 'cheeziousUsers';
@@ -111,12 +111,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     router.push('/login');
   }, [router]);
 
-  const addUser = useCallback((username: string, password: string, role: 'cashier' | 'admin') => {
+  const addUser = useCallback((username: string, password: string, role: UserRole, branchId?: string) => {
     if (users.some(u => u.username === username)) {
       alert('Username already exists.');
       return;
     }
-    const newUser: User = { id: crypto.randomUUID(), username, password, role };
+    const newUser: User = { id: crypto.randomUUID(), username, password, role, branchId };
     setUsers(prev => [...prev, newUser]);
   }, [users]);
 
