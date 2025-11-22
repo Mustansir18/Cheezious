@@ -1,60 +1,30 @@
 "use client";
-import { useFirebase, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, where, orderBy } from "firebase/firestore";
 import type { Order } from "@/lib/types";
 import { OrderCard } from "@/components/cashier/OrderCard";
 import { BarChart, Clock, CookingPot, CheckCircle, Loader } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useOrders } from "@/context/OrderContext";
 
 export default function CashierPage() {
-  const { firestore } = useFirebase();
-  const { user, isUserLoading } = useUser();
+  const { orders, isLoading, updateOrderStatus } = useOrders();
 
-  // Active orders are now those Ready for pickup
-  const activeOrdersQuery = useMemoFirebase(
-    () =>
-      firestore && user
-        ? query(
-            collection(firestore, "orders"),
-            where("status", "==", "Ready"),
-            orderBy("orderDate", "asc")
-          )
-        : null,
-    [firestore, user]
-  );
-  
-  // Completed orders remain the same
-  const completedOrdersQuery = useMemoFirebase(
-    () =>
-      firestore && user
-        ? query(
-            collection(firestore, "orders"),
-            where("status", "==", "Completed"),
-            orderBy("orderDate", "desc")
-          )
-        : null,
-    [firestore, user]
-  );
+  const activeOrders = orders.filter(order => order.status === "Ready");
+  const completedOrders = orders.filter(order => order.status === "Completed");
 
-  const { data: activeOrders, isLoading: isLoadingActive } = useCollection<Order>(activeOrdersQuery);
-  const { data: completedOrders, isLoading: isLoadingCompleted } = useCollection<Order>(completedOrdersQuery);
-  
   const totalSales = completedOrders?.reduce((acc, order) => acc + order.totalAmount, 0) ?? 0;
   
-  const isLoading = isUserLoading || isLoadingActive || isLoadingCompleted;
-
   const summaryCards = [
     { title: "Orders Ready for Pickup", value: activeOrders?.length ?? 0, icon: CookingPot },
     { title: "Completed Today", value: completedOrders?.length ?? 0, icon: CheckCircle },
     { title: "Total Sales", value: `$${totalSales.toFixed(2)}`, icon: BarChart },
   ];
 
-  if (isUserLoading) {
+  if (isLoading) {
       return (
         <div className="flex h-screen items-center justify-center">
             <Loader className="h-12 w-12 animate-spin text-primary" />
-            <p className="ml-4 text-muted-foreground">Authenticating...</p>
+            <p className="ml-4 text-muted-foreground">Loading Dashboard...</p>
         </div>
       )
   }
@@ -84,10 +54,10 @@ export default function CashierPage() {
 
       <h2 className="font-headline text-2xl font-bold mb-4">Ready for Pickup</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {isLoadingActive ? (
+        {isLoading ? (
             Array.from({ length: 3 }).map((_, i) => <OrderCard.Skeleton key={i} />)
         ) : activeOrders && activeOrders.length > 0 ? (
-          activeOrders.map((order) => <OrderCard key={order.id} order={order} workflow="cashier" />)
+          activeOrders.map((order) => <OrderCard key={order.id} order={order} workflow="cashier" onUpdateStatus={updateOrderStatus} />)
         ) : (
           <Card className="lg:col-span-2 xl:col-span-3 flex flex-col items-center justify-center p-12 text-center">
              <Clock className="h-16 w-16 text-muted-foreground/50 mb-4" />

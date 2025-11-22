@@ -1,20 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import * as Tone from "tone";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { CheckCircle, Loader, Utensils } from "lucide-react";
 import type { Order, PlacedOrder } from "@/lib/types";
-import { useFirebase, useDoc, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useOrders } from "@/context/OrderContext";
 
 export default function OrderStatusPage() {
   const [placedOrder, setPlacedOrder] = useState<PlacedOrder | null>(null);
   const router = useRouter();
-  const { firestore } = useFirebase();
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const { orders, isLoading } = useOrders();
 
   useEffect(() => {
     try {
@@ -22,7 +20,6 @@ export default function OrderStatusPage() {
       if (storedOrder) {
         const parsed = JSON.parse(storedOrder);
         setPlacedOrder(parsed);
-        setOrderId(parsed.orderId); // The orderId was added to PlacedOrder
       } else {
         router.replace('/');
       }
@@ -32,16 +29,16 @@ export default function OrderStatusPage() {
     }
   }, [router]);
 
-  const orderDocRef = useMemoFirebase(
-    () => (firestore && orderId ? doc(firestore, "orders", orderId) : null),
-    [firestore, orderId]
-  );
+  const order: Order | undefined = useMemo(() => {
+    if (!placedOrder) return undefined;
+    return orders.find(o => o.id === placedOrder.orderId);
+  }, [orders, placedOrder]);
   
-  const { data: order, isLoading } = useDoc<Order>(orderDocRef);
   const status = order?.status;
 
   useEffect(() => {
     if (status === 'Ready') {
+      // Ensure Tone.js only runs on the client
       if (typeof window !== "undefined") {
         const synth = new Tone.Synth().toDestination();
         const now = Tone.now();
@@ -52,7 +49,7 @@ export default function OrderStatusPage() {
     }
   }, [status]);
   
-  if (!placedOrder || isLoading) {
+  if (!placedOrder || isLoading || !order) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader className="h-12 w-12 animate-spin text-primary" />

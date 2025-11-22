@@ -10,15 +10,17 @@ import { Separator } from "@/components/ui/separator";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import Link from "next/link";
 import { branches } from "@/lib/data";
-import type { PlacedOrder } from "@/lib/types";
-import { useFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, serverTimestamp, addDoc, DocumentReference } from "firebase/firestore";
+import type { PlacedOrder, Order, OrderItem } from "@/lib/types";
 import { syncOrderToExternalSystem } from "@/ai/flows/sync-order-flow";
+import { useOrders } from "@/context/OrderContext";
+import { useToast } from "@/hooks/use-toast";
+
 
 export default function OrderConfirmationPage() {
   const { items, cartTotal, branchId, orderType, clearCart } = useCart();
+  const { addOrder } = useOrders();
   const router = useRouter();
-  const { firestore } = useFirebase();
+  const { toast } = useToast();
 
   if (!branchId || !orderType) {
     return (
@@ -35,89 +37,71 @@ export default function OrderConfirmationPage() {
   const branch = branches.find((b) => b.id === branchId);
 
   const handleConfirmOrder = async () => {
-    if (!firestore || !branchId || !orderType) return;
+    if (!branchId || !orderType) return;
 
+    const orderId = crypto.randomUUID();
     const orderNumber = `${branchId.slice(0,3).toUpperCase()}-${Date.now().toString().slice(-6)}`;
-    
-    const newOrder = {
+    const orderItems: OrderItem[] = items.map(item => ({
+        id: crypto.randomUUID(),
+        orderId: orderId,
+        menuItemId: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        itemPrice: item.price
+    }));
+
+    const newOrder: Order = {
+        id: orderId,
         branchId,
-        orderDate: serverTimestamp(),
+        orderDate: new Date().toISOString(),
         orderType,
         status: "Pending",
         totalAmount: cartTotal,
         orderNumber,
+        items: orderItems,
+    };
+    
+    // Asynchronously sync the order to the external system.
+    // We don't need to await this; it can happen in the background.
+    syncOrderToExternalSystem({
+        id: newOrder.id,
+        branchId: newOrder.branchId,
+        orderDate: newOrder.orderDate,
+        orderType: newOrder.orderType,
+        status: newOrder.status,
+        totalAmount: newOrder.totalAmount,
+        orderNumber: newOrder.orderNumber,
+        items: newOrder.items.map(item => ({
+            menuItemId: item.menuItemId,
+            name: item.name,
+            quantity: item.quantity,
+            itemPrice: item.itemPrice
+        }))
+    }).then(result => {
+        if (!result.success) {
+            // If syncing fails, show a toast to the user.
+            // This is a non-blocking error.
+            toast({
+                variant: "destructive",
+                title: "Sync Failed",
+                description: "Could not sync the order with the external system. Please check the logs.",
+            });
+        }
+    });
+
+    addOrder(newOrder);
+    
+    const placedOrder: PlacedOrder = {
+        orderId: newOrder.id,
+        orderNumber: newOrder.orderNumber,
+        total: cartTotal,
+        branchName: branch!.name,
+        orderType,
     };
 
-    const ordersCollection = collection(firestore, "orders");
-    
-    try {
-        const docRef = await addDoc(ordersCollection, newOrder).catch(async (error) => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: 'orders',
-                operation: 'create',
-                requestResourceData: newOrder
-            }));
-            // Here, returning null and checking for it is a clean way to stop execution.
-            return null;
-        });
-
-        // Ensure docRef is not null before proceeding
-        if (!docRef) {
-          // The error has been emitted, so we just stop here.
-          return; 
-        }
-
-        const orderItemsCollection = collection(firestore, `orders/${docRef.id}/order_items`);
-        
-        const itemPromises = items.map((item) => {
-            const orderItem = {
-                orderId: docRef.id,
-                menuItemId: item.id,
-                quantity: item.quantity,
-                itemPrice: item.price,
-                name: item.name,
-            };
-            return addDoc(orderItemsCollection, orderItem).catch(async (error) => {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: `orders/${docRef.id}/order_items`,
-                    operation: 'create',
-                    requestResourceData: orderItem
-                }));
-            });
-        });
-
-        await Promise.all(itemPromises);
-
-        const placedOrder: PlacedOrder = {
-            orderId: docRef.id,
-            orderNumber,
-            items,
-            total: cartTotal,
-            branchName: branch!.name,
-            orderType,
-        };
-
-        // Asynchronously sync the order to the external system.
-        // We don't need to await this; it can happen in the background.
-        syncOrderToExternalSystem({
-            ...newOrder,
-            id: docRef.id,
-            orderDate: new Date().toISOString(), // Convert to ISO string for serialization
-            items: items.map(item => ({
-                menuItemId: item.id,
-                name: item.name,
-                quantity: item.quantity,
-                itemPrice: item.price
-            }))
-        });
-
-        sessionStorage.setItem('placedOrder', JSON.stringify(placedOrder));
-        clearCart();
-        router.push("/order-status");
-
-    } catch (error: any) {
-        console.error("An unexpected error occurred while placing the order:", error);
-    }
+    sessionStorage.setItem('placedOrder', JSON.stringify(placedOrder));
+    clearCart();
+    router.push("/order-status");
   };
 
   const getImageUrl = (imageId: string) => {

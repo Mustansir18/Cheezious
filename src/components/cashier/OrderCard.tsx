@@ -1,8 +1,6 @@
 "use client";
 
-import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, doc, updateDoc } from "firebase/firestore";
-import type { Order, OrderItem } from "@/lib/types";
+import type { Order, OrderItem, OrderStatus } from "@/lib/types";
 import {
   Card,
   CardContent,
@@ -18,7 +16,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "../ui/skeleton";
 import { ScrollArea } from "../ui/scroll-area";
 import { Utensils, ShoppingBag, Check, CheckCircle, CookingPot, Loader } from "lucide-react";
-import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { useMemo } from "react";
 
 const statusConfig = {
     Pending: { icon: Loader, color: "text-gray-500", label: "Pending" },
@@ -28,26 +26,20 @@ const statusConfig = {
     Cancelled: { icon: CheckCircle, color: "text-red-500", label: "Cancelled" },
 };
 
+interface OrderCardProps {
+    order: Order;
+    workflow?: 'cashier' | 'kds';
+    onUpdateStatus: (orderId: string, newStatus: OrderStatus) => void;
+}
 
-export function OrderCard({ order, workflow = 'cashier' }: { order: Order, workflow?: 'cashier' | 'kds' }) {
-  const { firestore } = useFirebase();
-  const orderItemsQuery = useMemoFirebase(
-    () =>
-      firestore
-        ? collection(firestore, `orders/${order.id}/order_items`)
-        : null,
-    [firestore, order.id]
-  );
-
-  const { data: items, isLoading } = useCollection<OrderItem>(orderItemsQuery);
-
-  const handleUpdateStatus = (newStatus: Order['status']) => {
-    if (!firestore) return;
-    const orderRef = doc(firestore, "orders", order.id);
-    updateDocumentNonBlocking(orderRef, { status: newStatus });
+export function OrderCard({ order, workflow = 'cashier', onUpdateStatus }: OrderCardProps) {
+  const handleUpdateStatus = (newStatus: OrderStatus) => {
+    onUpdateStatus(order.id, newStatus);
   };
   
   const StatusIcon = statusConfig[order.status]?.icon || Loader;
+
+  const orderDate = useMemo(() => new Date(order.orderDate), [order.orderDate]);
 
   return (
     <Card className="flex h-full flex-col">
@@ -57,14 +49,13 @@ export function OrderCard({ order, workflow = 'cashier' }: { order: Order, workf
             <Badge variant="secondary">{order.orderType === 'Dine-In' ? <Utensils className="mr-1 h-4 w-4"/> : <ShoppingBag className="mr-1 h-4 w-4" />} {order.orderType}</Badge>
         </CardTitle>
         <CardDescription>
-          {formatDistanceToNow(order.orderDate.toDate(), { addSuffix: true })}
+          {formatDistanceToNow(orderDate, { addSuffix: true })}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
         <ScrollArea className="h-40 pr-4">
             <div className="space-y-3">
-            {isLoading && Array.from({length: 3}).map((_, i) => <OrderItemSkeleton key={i} />)}
-            {items?.map((item) => (
+            {order.items?.map((item) => (
                 <div key={item.id} className="flex justify-between items-center text-sm">
                     <div>
                         <span className="font-semibold">{item.quantity}x</span> {item.name}
@@ -100,14 +91,14 @@ export function OrderCard({ order, workflow = 'cashier' }: { order: Order, workf
              </div>
          )}
          {workflow === 'cashier' && (
-            <div className="grid grid-cols-2 gap-2 w-full">
+            <div className="grid grid-cols-1 gap-2 w-full">
                 {order.status === 'Ready' && (
                      <Button onClick={() => handleUpdateStatus('Completed')} size="sm" className="w-full bg-green-500 hover:bg-green-600">
                         <CheckCircle className="mr-2 h-4 w-4" /> Mark as Completed
                      </Button>
                 )}
                  {(order.status === 'Pending' || order.status === 'Preparing' || order.status === 'Ready') && (
-                    <Button onClick={() => handleUpdateStatus('Cancelled')} size="sm" variant="destructive" className="w-full col-span-full">
+                    <Button onClick={() => handleUpdateStatus('Cancelled')} size="sm" variant="destructive" className="w-full">
                         Cancel Order
                     </Button>
                  )}

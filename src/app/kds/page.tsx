@@ -1,36 +1,21 @@
 "use client";
-import { useFirebase, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, where, orderBy } from "firebase/firestore";
-import type { Order } from "@/lib/types";
 import { OrderCard } from "@/components/cashier/OrderCard";
 import { Clock, Loader } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { useOrders } from "@/context/OrderContext";
 
 export default function KdsPage() {
-  const { firestore } = useFirebase();
-  const { user, isUserLoading } = useUser();
+  const { orders, isLoading, updateOrderStatus } = useOrders();
 
-  const kitchenOrdersQuery = useMemoFirebase(
-    () =>
-      firestore && user
-        ? query(
-            collection(firestore, "orders"),
-            where("status", "in", ["Pending", "Preparing"]),
-            orderBy("orderDate", "asc")
-          )
-        : null,
-    [firestore, user]
+  const kitchenOrders = orders.filter(
+    (order) => order.status === 'Pending' || order.status === 'Preparing'
   );
 
-  const { data: kitchenOrders, isLoading: isLoadingOrders } = useCollection<Order>(kitchenOrdersQuery);
-  
-  const isLoading = isUserLoading || isLoadingOrders;
-
-  if (isUserLoading) {
+  if (isLoading) {
       return (
         <div className="flex h-screen items-center justify-center">
             <Loader className="h-12 w-12 animate-spin text-primary" />
-            <p className="ml-4 text-muted-foreground">Authenticating Kitchen Display...</p>
+            <p className="ml-4 text-muted-foreground">Loading Kitchen Display...</p>
         </div>
       )
   }
@@ -47,7 +32,7 @@ export default function KdsPage() {
             Array.from({ length: 4 }).map((_, i) => <OrderCard.Skeleton key={i} />)
         ) : kitchenOrders && kitchenOrders.length > 0 ? (
           kitchenOrders.map((order) => (
-            <OrderCard key={order.id} order={order} workflow="kds" />
+            <OrderCard key={order.id} order={order} workflow="kds" onUpdateStatus={updateOrderStatus} />
           ))
         ) : (
           <Card className="md:col-span-2 lg:col-span-3 xl:col-span-4 flex flex-col items-center justify-center p-12 text-center bg-gray-800 border-gray-700">
