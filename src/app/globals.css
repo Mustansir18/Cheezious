@@ -89,20 +89,16 @@ body {
 
 @media print {
     body {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
     .print\:hidden {
-        display: none;
+        display: none !important;
     }
-    body > *, .print-content > * {
-        visibility: hidden;
+    #print-area {
+        display: block !important;
     }
-    .print-content {
-        visibility: visible;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+    body > :not(#print-area) {
+       display: none !important;
     }
 }
