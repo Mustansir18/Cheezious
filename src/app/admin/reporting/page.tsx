@@ -60,15 +60,22 @@ export default function ReportingPage() {
     const takeAwayOrders = filteredOrders.filter((o) => o.orderType === "Take-Away");
     const paymentMethodCounts: { [key: string]: number } = {};
     
+    // --- Dine In Metrics ---
     const dineInSales = dineInOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-    const takeAwaySales = takeAwayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-
-    // Detailed Dine-In Metrics
     const dineInGrossSales = dineInOrders.reduce((sum, order) => sum + order.totalAmount, 0);
     const dineInNetSales = dineInOrders.reduce((sum, order) => sum + order.subtotal, 0);
     const dineInTax = dineInOrders.reduce((sum, order) => sum + order.taxAmount, 0);
     const dineInCashSales = dineInOrders.filter(o => o.paymentMethod === 'Cash').reduce((sum, order) => sum + order.totalAmount, 0);
     const dineInCardSales = dineInOrders.filter(o => o.paymentMethod?.toLowerCase().includes('card')).reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // --- Take Away Metrics ---
+    const takeAwaySales = takeAwayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const takeAwayGrossSales = takeAwayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const takeAwayNetSales = takeAwayOrders.reduce((sum, order) => sum + order.subtotal, 0);
+    const takeAwayTax = takeAwayOrders.reduce((sum, order) => sum + order.taxAmount, 0);
+    const takeAwayCashSales = takeAwayOrders.filter(o => o.paymentMethod === 'Cash').reduce((sum, order) => sum + order.totalAmount, 0);
+    const takeAwayCardSales = takeAwayOrders.filter(o => o.paymentMethod?.toLowerCase().includes('card')).reduce((sum, order) => sum + order.totalAmount, 0);
+
 
     for (const order of filteredOrders) {
       const hour = new Date(order.orderDate).getHours();
@@ -118,7 +125,12 @@ export default function ReportingPage() {
       dineInNetSales,
       dineInTax,
       dineInCashSales,
-      dineInCardSales
+      dineInCardSales,
+      takeAwayGrossSales,
+      takeAwayNetSales,
+      takeAwayTax,
+      takeAwayCashSales,
+      takeAwayCardSales,
     };
   }, [orders, dateRange]);
 
@@ -209,6 +221,11 @@ export default function ReportingPage() {
     dineInTax,
     dineInCashSales,
     dineInCardSales,
+    takeAwayGrossSales,
+    takeAwayNetSales,
+    takeAwayTax,
+    takeAwayCashSales,
+    takeAwayCardSales,
   } = reportData;
 
   const summaryCards = [
@@ -228,6 +245,14 @@ export default function ReportingPage() {
       { label: "Total Tax", value: `RS ${dineInTax.toFixed(2)}` },
       { label: "Cash Sales", value: `RS ${dineInCashSales.toFixed(2)}` },
       { label: "Card Sales", value: `RS ${dineInCardSales.toFixed(2)}` },
+  ]
+  
+  const takeAwayBreakdown = [
+      { label: "Gross Sales", value: `RS ${takeAwayGrossSales.toFixed(2)}` },
+      { label: "Net Sales", value: `RS ${takeAwayNetSales.toFixed(2)}` },
+      { label: "Total Tax", value: `RS ${takeAwayTax.toFixed(2)}` },
+      { label: "Cash Sales", value: `RS ${takeAwayCashSales.toFixed(2)}` },
+      { label: "Card Sales", value: `RS ${takeAwayCardSales.toFixed(2)}` },
   ]
 
   return (
@@ -327,6 +352,23 @@ export default function ReportingPage() {
              </Card>
         </div>
 
+        <div id="take-away-breakdown">
+             <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center"><ShoppingBag className="mr-2 h-5 w-5 text-primary"/>Take Away Sales Breakdown</CardTitle>
+                    <CardDescription>Detailed sales figures for Take Away orders for the selected period.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {takeAwayBreakdown.map(item => (
+                        <div key={item.label} className="rounded-lg border bg-card text-card-foreground p-4 flex flex-col items-center justify-center text-center">
+                             <p className="text-sm font-medium text-muted-foreground">{item.label}</p>
+                             <p className="text-2xl font-bold">{item.value}</p>
+                        </div>
+                    ))}
+                </CardContent>
+             </Card>
+        </div>
+
 
           <div id="payment-report">
             <Card>
@@ -365,3 +407,4 @@ export default function ReportingPage() {
   );
 }
 
+    
