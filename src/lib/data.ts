@@ -37,7 +37,7 @@ export const menuItems: MenuItem[] = [
     description: '4 Pcs of bread stuffed with cheese.',
     price: 550,
     category: 'Starters',
-    imageId: 'side-1', // Needs a better image
+    imageId: 'side-1', 
   },
   {
     id: 'starter-2',
@@ -45,7 +45,7 @@ export const menuItems: MenuItem[] = [
     description: '6 Pcs of delicious oven baked wings tossed in sauce of your choice.',
     price: 490,
     category: 'Starters',
-    imageId: 'deal-2', // Needs a better image
+    imageId: 'deal-2',
   },
   
   // Pizzas
