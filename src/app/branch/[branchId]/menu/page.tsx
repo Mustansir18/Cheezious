@@ -20,14 +20,13 @@ const categoryIcons: { [key: string]: React.ReactNode } = {
 export default function MenuPage({ params }: { params: { branchId: string } }) {
   const searchParams = useSearchParams();
   const { setOrderDetails } = useCart();
-  const { branchId } = params;
 
   useEffect(() => {
     const mode = searchParams.get("mode") as OrderType;
-    if (mode && branchId) {
-      setOrderDetails({ branchId: branchId, orderType: mode });
+    if (mode && params.branchId) {
+      setOrderDetails({ branchId: params.branchId, orderType: mode });
     }
-  }, [searchParams, branchId, setOrderDetails]);
+  }, [searchParams, params.branchId, setOrderDetails]);
 
   const categories = [...new Set(menuItems.map((item) => item.category))];
 
