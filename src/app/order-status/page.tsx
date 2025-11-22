@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
@@ -169,7 +168,10 @@ export default function OrderStatusPage() {
           <Button
             size="lg"
             className="w-full"
-            onClick={() => router.push("/")}
+            onClick={() => {
+              sessionStorage.removeItem("placedOrder");
+              router.push("/");
+            }}
           >
             New Order
           </Button>

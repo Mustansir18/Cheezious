@@ -37,11 +37,14 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   // Persist orders to sessionStorage whenever they change
   useEffect(() => {
     try {
-      sessionStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+      // Only persist if loading is complete to avoid overwriting initial state
+      if (!isLoading) {
+        sessionStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+      }
     } catch (error) {
       console.error("Could not save orders to session storage", error);
     }
-  }, [orders]);
+  }, [orders, isLoading]);
   
   // Listen for storage changes from other tabs
   useEffect(() => {
