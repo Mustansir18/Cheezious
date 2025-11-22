@@ -30,7 +30,7 @@ export default function MenuPage({ params: { branchId } }: { params: { branchId:
     }
   }, [searchParams, branchId, setOrderDetails]);
 
-  const categories = ['Deals', 'Starters', 'Pizzas', 'Burgers', 'Sides', 'Drinks'];
+  const categories = Array.from(new Set(menuItems.map(item => item.category)));
 
   return (
     <div className="container mx-auto px-4 py-8">

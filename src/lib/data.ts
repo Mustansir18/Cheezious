@@ -4,40 +4,74 @@ import branchesData from '@/config/branches.json';
 export const branches: Branch[] = branchesData.branches;
 
 export const menuItems: MenuItem[] = [
-  // Deals
+  // Deals from image
   {
     id: 'deal-1',
-    name: 'Somewhat Amazing Deal 1',
-    description: '1 Small Pizza & 345ml Drink.',
-    price: 550,
-    category: 'Deals',
-    imageId: 'pizza-small',
-  },
-  {
-    id: 'deal-2',
-    name: 'Somewhat Amazing Deal 2',
-    description: '1 Regular Pizza & 2 345ml Drinks.',
-    price: 1350,
-    category: 'Deals',
-    imageId: 'pizza-regular',
-  },
-  {
-    id: 'deal-3',
-    name: 'Midnight Deal 1',
-    description: '1 Small Pizza, 1 Zinger Burger.',
-    price: 899,
+    name: 'Somewhat Amazing 1',
+    description: '2 Bazinga burgers, Reg. fries, 2 reg. drinks.',
+    price: 1250,
     category: 'Deals',
     imageId: 'deal-1',
   },
+  {
+    id: 'deal-2',
+    name: 'Somewhat Amazing 2',
+    description: '2 Bazinga burgers, 2 pcs chicken, Large fries, 2 reg. drinks.',
+    price: 1750,
+    category: 'Deals',
+    imageId: 'deal-2',
+  },
+  {
+    id: 'deal-3',
+    name: 'Somewhat Amazing 3',
+    description: '3 Bazinga burgers, Large fries, 1 liter drink.',
+    price: 1890,
+    category: 'Deals',
+    imageId: 'deal-3',
+  },
+  {
+    id: 'deal-4',
+    name: 'Somewhat Amazing 4',
+    description: '3 Bazinga burgers, 3 pcs chicken, 1 liter drink.',
+    price: 2150,
+    category: 'Deals',
+    imageId: 'deal-4',
+  },
 
-  // Starters
+  // Money saving deals (Pizzas) from image
+  {
+    id: 'pizza-deal-1',
+    name: 'Small Pizza Deal',
+    description: '6" small pizza, 1 reg. Drink (345 ml).',
+    price: 750,
+    category: 'Pizzas',
+    imageId: 'pizza-small',
+  },
+  {
+    id: 'pizza-deal-2',
+    name: 'Regular Pizza Deal',
+    description: '9" regular pizza, 2 reg. Drinks (345 ml).',
+    price: 1450,
+    category: 'Pizzas',
+    imageId: 'pizza-regular',
+  },
+  {
+    id: 'pizza-deal-3',
+    name: 'Large Pizza Deal',
+    description: '12" large pizza, 1 liter drink.',
+    price: 1990,
+    category: 'Pizzas',
+    imageId: 'pizza-large',
+  },
+
+  // Starters (Example items, as not in deals image)
   {
     id: 'starter-1',
     name: 'Cheezy Sticks',
     description: '4 Pcs of bread stuffed with cheese.',
     price: 550,
     category: 'Starters',
-    imageId: 'side-1', 
+    imageId: 'side-1',
   },
   {
     id: 'starter-2',
@@ -47,34 +81,8 @@ export const menuItems: MenuItem[] = [
     category: 'Starters',
     imageId: 'deal-2',
   },
-  
-  // Pizzas
-  {
-    id: 'pizza-1',
-    name: 'Chicken Tikka',
-    description: 'A classically delicious combination of chicken tikka and onions.',
-    price: 990,
-    category: 'Pizzas',
-    imageId: 'pizza-1',
-  },
-  {
-    id: 'pizza-2',
-    name: 'Chicken Fajita',
-    description: 'An authentic taste of fajita variant marinated chicken, onion, green peppers with a layer of cheese.',
-    price: 990,
-    category: 'Pizzas',
-    imageId: 'pizza-2',
-  },
-  {
-    id: 'pizza-3',
-    name: 'Cheezious Special',
-    description: 'A mouth watering combination of 3 types of meat with all veggies and a double layer of cheese.',
-    price: 1150,
-    category: 'Pizzas',
-    imageId: 'pizza-3',
-  },
 
-  // Burgers
+  // Burgers (Example items, as not in deals image)
   {
     id: 'b1',
     name: 'Zinger Burger',
@@ -91,8 +99,8 @@ export const menuItems: MenuItem[] = [
     category: 'Burgers',
     imageId: 'burger-1',
   },
-
-  // Sides
+  
+  // Sides (Example item)
   {
     id: 's1',
     name: 'French Fries',
@@ -101,22 +109,46 @@ export const menuItems: MenuItem[] = [
     category: 'Sides',
     imageId: 'side-1',
   },
-
-  // Drinks
+  
+  // Drinks from image
   {
     id: 'd1',
-    name: 'Soft Drink',
-    description: '345ml Can',
+    name: 'Regular Soft Drink',
+    description: 'A regular-sized soft drink.',
     price: 100,
     category: 'Drinks',
     imageId: 'drink-1',
   },
   {
     id: 'd2',
-    name: 'Mineral Water',
-    description: '500ml Bottle',
-    price: 80,
+    name: '1 Liter Soft Drink',
+    description: '1 Liter soft drink bottle.',
+    price: 190,
+    category: 'Drinks',
+    imageId: 'drink-liter',
+  },
+  {
+    id: 'd3',
+    name: '1.5 Liter Soft Drink',
+    description: '1.5 Liter soft drink bottle.',
+    price: 220,
+    category: 'Drinks',
+    imageId: 'drink-liter',
+  },
+  {
+    id: 'd4',
+    name: 'Small Water Bottle',
+    description: 'A small bottle of mineral water.',
+    price: 60,
     category: 'Drinks',
     imageId: 'drink-2',
+  },
+  {
+    id: 'd5',
+    name: 'Small Juice',
+    description: 'A small carton of juice.',
+    price: 60,
+    category: 'Drinks',
+    imageId: 'juice-small',
   },
 ];
