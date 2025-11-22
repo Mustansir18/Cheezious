@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Order, OrderItem, OrderStatus } from "@/lib/types";
@@ -15,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "../ui/skeleton";
 import { ScrollArea } from "../ui/scroll-area";
-import { Utensils, ShoppingBag, Check, CheckCircle, CookingPot, Loader, CreditCard, Printer } from "lucide-react";
+import { Utensils, ShoppingBag, Check, CheckCircle, CookingPot, Loader, CreditCard, Printer, Info } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useSettings } from "@/context/SettingsContext";
 import { OrderReceipt } from "./OrderReceipt";
@@ -32,9 +33,10 @@ interface OrderCardProps {
     order: Order;
     workflow?: 'cashier' | 'kds';
     onUpdateStatus: (orderId: string, newStatus: OrderStatus) => void;
+    children?: React.ReactNode; // For additional action buttons like InfoModal
 }
 
-export function OrderCard({ order, workflow = 'cashier', onUpdateStatus }: OrderCardProps) {
+export function OrderCard({ order, workflow = 'cashier', onUpdateStatus, children }: OrderCardProps) {
   const { settings } = useSettings();
   const receiptRef = useRef<HTMLDivElement>(null);
   
@@ -71,6 +73,7 @@ export function OrderCard({ order, workflow = 'cashier', onUpdateStatus }: Order
         <CardTitle className="flex items-center justify-between">
             <span className="font-headline text-xl">Order #{order.orderNumber}</span>
             <div className="flex items-center gap-1">
+                {children}
                 <Button variant="ghost" size="icon" className="h-8 w-8 print-hidden" onClick={handlePrint}>
                     <Printer className="h-4 w-4" />
                 </Button>
