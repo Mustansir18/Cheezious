@@ -15,9 +15,10 @@ import { Separator } from "@/components/ui/separator";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "../ui/skeleton";
 import { ScrollArea } from "../ui/scroll-area";
-import { Utensils, ShoppingBag, Check, CheckCircle, CookingPot, Loader, CreditCard } from "lucide-react";
-import { useMemo } from "react";
+import { Utensils, ShoppingBag, Check, CheckCircle, CookingPot, Loader, CreditCard, Printer } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { useSettings } from "@/context/SettingsContext";
+import { OrderReceipt } from "./OrderReceipt";
 
 const statusConfig = {
     Pending: { icon: Loader, color: "text-gray-500", label: "Pending" },
@@ -35,9 +36,27 @@ interface OrderCardProps {
 
 export function OrderCard({ order, workflow = 'cashier', onUpdateStatus }: OrderCardProps) {
   const { settings } = useSettings();
+  const receiptRef = useRef<HTMLDivElement>(null);
   
   const handleUpdateStatus = (newStatus: OrderStatus) => {
     onUpdateStatus(order.id, newStatus);
+  };
+
+  const handlePrint = () => {
+    const printableArea = document.getElementById(`printable-receipt-${order.id}`);
+    if (!printableArea) return;
+
+    // Temporarily append to a visible part of the body to print
+    const printContainer = document.createElement('div');
+    printContainer.id = 'printable-area';
+    printContainer.appendChild(printableArea.cloneNode(true));
+    document.body.appendChild(printContainer);
+    
+    document.body.classList.add('printing-active');
+    window.print();
+    document.body.classList.remove('printing-active');
+
+    document.body.removeChild(printContainer);
   };
   
   const StatusIcon = statusConfig[order.status]?.icon || Loader;
@@ -51,7 +70,12 @@ export function OrderCard({ order, workflow = 'cashier', onUpdateStatus }: Order
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
             <span className="font-headline text-xl">Order #{order.orderNumber}</span>
-            <Badge variant="secondary">{order.orderType === 'Dine-In' ? <Utensils className="mr-1 h-4 w-4"/> : <ShoppingBag className="mr-1 h-4 w-4" />} {order.orderType}</Badge>
+            <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8 print-hidden" onClick={handlePrint}>
+                    <Printer className="h-4 w-4" />
+                </Button>
+                <Badge variant="secondary">{order.orderType === 'Dine-In' ? <Utensils className="mr-1 h-4 w-4"/> : <ShoppingBag className="mr-1 h-4 w-4" />} {order.orderType}</Badge>
+            </div>
         </CardTitle>
         <CardDescription>
           {formatDistanceToNow(orderDate, { addSuffix: true })}
@@ -117,6 +141,11 @@ export function OrderCard({ order, workflow = 'cashier', onUpdateStatus }: Order
              </div>
          )}
       </CardFooter>
+      <div className="hidden">
+        <div id={`printable-receipt-${order.id}`}>
+          <OrderReceipt order={order} />
+        </div>
+      </div>
     </Card>
   );
 }

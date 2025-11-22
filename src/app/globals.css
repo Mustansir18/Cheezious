@@ -113,7 +113,8 @@ body {
         left: 0 !important;
         width: 100% !important;
         height: auto !important;
-        padding: 2rem;
+        padding: 0;
+        margin: 0;
         border: none;
         box-shadow: none;
     }

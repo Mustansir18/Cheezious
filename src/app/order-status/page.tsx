@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import * as Tone from "tone";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { CheckCircle, Loader, Utensils } from "lucide-react";
+import { CheckCircle, Loader, Utensils, Printer } from "lucide-react";
 import type { Order, PlacedOrder } from "@/lib/types";
 import { useOrders } from "@/context/OrderContext";
+import { OrderReceipt } from "@/components/cashier/OrderReceipt";
 
 export default function OrderStatusPage() {
   const [placedOrder, setPlacedOrder] = useState<PlacedOrder | null>(null);
@@ -35,6 +36,24 @@ export default function OrderStatusPage() {
   }, [orders, placedOrder]);
   
   const status = order?.status;
+
+  const handlePrint = () => {
+    if (!order) return;
+    const printableArea = document.getElementById(`printable-receipt-${order.id}`);
+    if (!printableArea) return;
+
+    const printContainer = document.createElement('div');
+    printContainer.id = 'printable-area';
+    printContainer.appendChild(printableArea.cloneNode(true));
+    document.body.appendChild(printContainer);
+    
+    document.body.classList.add('printing-active');
+    window.print();
+    document.body.classList.remove('printing-active');
+
+    document.body.removeChild(printContainer);
+  };
+
 
   useEffect(() => {
     if (status === 'Ready') {
@@ -101,16 +120,31 @@ export default function OrderStatusPage() {
           </div>
 
         </CardContent>
-        <CardFooter>
+        <CardFooter className="grid gap-2 grid-cols-2">
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={handlePrint}
+            className="w-full"
+          >
+            <Printer className="mr-2 h-4 w-4" /> Print Receipt
+          </Button>
           <Button
             size="lg"
             className="w-full"
             onClick={() => router.push("/")}
           >
-            Start a New Order
+            New Order
           </Button>
         </CardFooter>
       </Card>
+      
+      {/* Hidden receipt for printing */}
+      <div className="hidden">
+        <div id={`printable-receipt-${order.id}`}>
+          <OrderReceipt order={order} />
+        </div>
+      </div>
     </div>
   );
 }
