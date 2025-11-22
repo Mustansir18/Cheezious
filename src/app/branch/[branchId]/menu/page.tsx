@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import type { OrderType } from "@/lib/types";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
@@ -22,8 +22,9 @@ const Icon = ({ name, className }: { name: string, className: string }) => {
 };
 
 
-export default function MenuPage({ params }: { params: { branchId: string } }) {
-  const { branchId } = params;
+export default function MenuPage() {
+  const params = useParams();
+  const branchId = params.branchId as string;
   const searchParams = useSearchParams();
   const { setOrderDetails } = useCart();
   const { menu, isLoading } = useMenu();
