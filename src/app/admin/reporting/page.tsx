@@ -3,7 +3,7 @@
 
 import { useOrders } from "@/context/OrderContext";
 import { useMemo, useState, useEffect } from "react";
-import type { Order, OrderItem } from "@/lib/types";
+import type { Order } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar as CalendarIcon, ShoppingCart, DollarSign, Utensils, Loader, Printer, CreditCard, ShoppingBag, FileDown } from "lucide-react";
 import { HourlySalesReport } from "@/components/reporting/HourlySalesReport";
@@ -112,7 +112,17 @@ export default function ReportingPage() {
     // Create a temporary, printable container
     const printableArea = document.createElement('div');
     printableArea.id = 'printable-area';
-    printableArea.innerHTML = reportElement.innerHTML;
+    
+    // Clone the node to avoid moving the original element
+    const contentToPrint = reportElement.cloneNode(true) as HTMLElement;
+    
+    // If printing the main charts area, remove buttons from the cloned headers
+    if (reportId === 'hourly-sales-report' || reportId === 'top-items-report') {
+        const buttons = contentToPrint.querySelectorAll('.print-hidden');
+        buttons.forEach(btn => btn.remove());
+    }
+
+    printableArea.appendChild(contentToPrint);
     
     // Append to body, print, then remove
     document.body.appendChild(printableArea);
@@ -126,7 +136,6 @@ export default function ReportingPage() {
 
   useEffect(() => {
     const afterPrint = () => {
-      // Cleanup in case the print dialog is cancelled
       document.body.classList.remove('printing-active');
       const printableArea = document.getElementById('printable-area');
       if (printableArea) {
@@ -236,26 +245,7 @@ export default function ReportingPage() {
       
       <div className="space-y-8">
           <div id="summary-report">
-            <Card>
-                <CardHeader className="flex-row justify-between items-center">
-                    <CardTitle>Summary</CardTitle>
-                    <div className="flex items-center gap-2 print-hidden">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" disabled>
-                                    <FileDown className="h-4 w-4"/>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Download report (coming soon)</p>
-                            </TooltipContent>
-                        </Tooltip>
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint('summary-report')}>
-                            <Printer className="h-4 w-4"/>
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
                     {summaryCards.map(card => (
                         <Card key={card.title}>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -267,41 +257,23 @@ export default function ReportingPage() {
                             </CardContent>
                         </Card>
                     ))}
-                </CardContent>
-            </Card>
+                </div>
           </div>
           
           <div id="payment-report">
             <Card>
-                <CardHeader className="flex-row justify-between items-center">
-                    <div>
-                        <CardTitle className="font-headline flex items-center"><CreditCard className="mr-2 h-5 w-5 text-primary"/>Payment Method Breakdown (Dine-In)</CardTitle>
-                        <CardDescription>Number of dine-in orders per payment method for the selected period.</CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2 print-hidden">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" disabled>
-                                    <FileDown className="h-4 w-4"/>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Download report (coming soon)</p>
-                            </TooltipContent>
-                        </Tooltip>
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint('payment-report')}>
-                            <Printer className="h-4 w-4"/>
-                        </Button>
-                    </div>
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center"><CreditCard className="mr-2 h-5 w-5 text-primary"/>Payment Method Breakdown</CardTitle>
+                    <CardDescription>Number of dine-in orders per payment method for the selected period.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {Object.keys(paymentMethodCounts).length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                             {Object.entries(paymentMethodCounts).map(([method, count]) => (
-                                <div key={method} className="bg-muted/50 p-4 rounded-lg">
-                                    <p className="text-sm font-medium text-muted-foreground">{method}</p>
+                                <Card key={method} className="p-4 flex flex-col items-center justify-center">
                                     <p className="text-2xl font-bold">{count}</p>
-                                </div>
+                                    <p className="text-sm font-medium text-muted-foreground">{method}</p>
+                                </Card>
                             ))}
                         </div>
                     ) : (
@@ -324,5 +296,3 @@ export default function ReportingPage() {
     </TooltipProvider>
   );
 }
-
-    
