@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Order } from "@/lib/types";
@@ -28,7 +29,6 @@ export function OrderReceipt({ order }: OrderReceiptProps) {
                 <p><strong>Date:</strong> {new Date(order.orderDate).toLocaleString()}</p>
                 <p><strong>Type:</strong> {order.orderType}</p>
                 {table && <p><strong>Table:</strong> {table.name}</p>}
-                <p><strong>Status:</strong> {order.status}</p>
             </div>
             
             <hr className="border-dashed border-black my-2" />
@@ -85,3 +85,4 @@ export function OrderReceipt({ order }: OrderReceiptProps) {
         </div>
     );
 }
+
