@@ -158,7 +158,7 @@ export default function ReportingPage() {
       <header className="mb-8 flex flex-col md:flex-row justify-between items-start gap-4 print:hidden">
         <div>
             <h1 className="font-headline text-4xl font-bold">Admin Reports</h1>
-            <p className="text-muted-foreground">Sales data from the current session.</p>
+            <p className="text-muted-foreground">Sales data for the selected period.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
             <Popover>
@@ -167,7 +167,7 @@ export default function ReportingPage() {
                   id="date"
                   variant={"outline"}
                   className={cn(
-                    "w-[300px] justify-start text-left font-normal",
+                    "w-full sm:w-[300px] justify-start text-left font-normal",
                     !dateRange && "text-muted-foreground"
                   )}
                 >
@@ -182,7 +182,7 @@ export default function ReportingPage() {
                       format(dateRange.from, "LLL dd, y")
                     )
                   ) : (
-                    <span>Pick a date</span>
+                    <span>Pick a date range</span>
                   )}
                 </Button>
               </PopoverTrigger>
@@ -201,12 +201,17 @@ export default function ReportingPage() {
                 <Printer className="mr-2 h-4 w-4" />
                 Print Report
             </Button>
+            <Button variant="outline" disabled>
+              <FileDown className="mr-2 h-4 w-4" />
+              Download
+            </Button>
         </div>
       </header>
       
       <div id="print-area">
-        <div className="print-content">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5 mb-8">
+        {/* This div wrapper ensures print styles apply correctly */}
+        <div className="print-content space-y-8">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
                 {summaryCards.map(card => (
                     <Card key={card.title}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -220,28 +225,26 @@ export default function ReportingPage() {
                 ))}
             </div>
             
-            <div className="mb-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline flex items-center"><CreditCard className="mr-2 h-5 w-5 text-primary"/>Payment Method Breakdown (Dine-In)</CardTitle>
-                        <CardDescription>Number of dine-in orders per payment method for the selected period.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {Object.keys(paymentMethodCounts).length > 0 ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                {Object.entries(paymentMethodCounts).map(([method, count]) => (
-                                    <div key={method} className="bg-muted/50 p-4 rounded-lg">
-                                        <p className="text-sm font-medium text-muted-foreground">{method}</p>
-                                        <p className="text-2xl font-bold">{count}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-muted-foreground">No dine-in orders with a payment method recorded for this period.</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center"><CreditCard className="mr-2 h-5 w-5 text-primary"/>Payment Method Breakdown (Dine-In)</CardTitle>
+                    <CardDescription>Number of dine-in orders per payment method for the selected period.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {Object.keys(paymentMethodCounts).length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            {Object.entries(paymentMethodCounts).map(([method, count]) => (
+                                <div key={method} className="bg-muted/50 p-4 rounded-lg">
+                                    <p className="text-sm font-medium text-muted-foreground">{method}</p>
+                                    <p className="text-2xl font-bold">{count}</p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground">No dine-in orders with a payment method recorded for this period.</p>
+                    )}
+                </CardContent>
+            </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                 <div className="lg:col-span-3">

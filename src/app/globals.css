@@ -87,18 +87,23 @@ body {
   }
 }
 
+/* Print-specific styles */
 @media print {
     body {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
+    .print-content {
+        display: block !important;
+    }
     .print\:hidden {
         display: none !important;
     }
-    #print-area {
-        display: block !important;
-    }
+    /* Hide everything except the main print area */
     body > :not(#print-area) {
        display: none !important;
+    }
+    #print-area > :not(.print-content) {
+        display: none !important;
     }
 }
