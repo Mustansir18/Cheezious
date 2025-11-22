@@ -1,3 +1,4 @@
+import { z } from 'zod';
 
 export type Branch = {
   id: string;
@@ -52,4 +53,35 @@ export type PlacedOrder = {
     total: number;
     branchName: string;
     orderType: OrderType;
-}
+};
+
+// --- Types for External System Sync ---
+
+// Defines the schema for a single item within the order for external sync.
+const OrderItemSyncSchema = z.object({
+  menuItemId: z.string().describe('The unique identifier for the menu item.'),
+  name: z.string().describe('The name of the menu item.'),
+  quantity: z.number().describe('The quantity of this item ordered.'),
+  itemPrice: z.number().describe('The price of a single unit of this item.'),
+});
+
+// Defines the schema for the entire order to be sent to the external system.
+export const SyncOrderInputSchema = z.object({
+  id: z.string().describe('The unique identifier for the order.'),
+  branchId: z.string().describe('The identifier for the branch where the order was placed.'),
+  orderDate: z.string().describe('The ISO 8601 timestamp when the order was placed.'),
+  orderType: z.enum(['Dine-In', 'Take-Away']).describe('The type of order.'),
+  status: z.string().describe('The current status of the order (e.g., "Pending").'),
+  totalAmount: z.number().describe('The total cost of the order.'),
+  orderNumber: z.string().describe('The human-readable order number.'),
+  items: z.array(OrderItemSyncSchema).describe('An array of items included in the order.'),
+});
+export type SyncOrderInput = z.infer<typeof SyncOrderInputSchema>;
+
+// Defines the schema for the response after attempting to sync the order.
+export const SyncOrderOutputSchema = z.object({
+  success: z.boolean().describe('Indicates whether the synchronization was successful.'),
+  externalId: z.string().optional().describe('The identifier for the order in the external system, if successful.'),
+  message: z.string().describe('A message detailing the result of the operation.'),
+});
+export type SyncOrderOutput = z.infer<typeof SyncOrderOutputSchema>;
