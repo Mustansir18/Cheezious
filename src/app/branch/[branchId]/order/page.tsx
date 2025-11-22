@@ -18,6 +18,7 @@ import { useSettings } from "@/context/SettingsContext";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+const FALLBACK_IMAGE_URL = "https://picsum.photos/seed/placeholder/400/300";
 
 export default function OrderConfirmationPage() {
   const { items, cartTotal, branchId, orderType, floorId, tableId, clearCart } = useCart();
@@ -148,7 +149,7 @@ export default function OrderConfirmationPage() {
               <div key={item.id}>
                 <div className="flex items-center gap-4 py-2">
                   <Image
-                    src={item.imageUrl}
+                    src={item.imageUrl || FALLBACK_IMAGE_URL}
                     alt={item.name}
                     width={48}
                     height={48}
@@ -222,3 +223,5 @@ export default function OrderConfirmationPage() {
     </div>
   );
 }
+
+    
