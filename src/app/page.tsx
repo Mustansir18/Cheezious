@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDeals } from "@/context/DealsContext";
-import Autoplay from "embla-carousel-autoplay";
+// TODO: Re-enable autoplay when dependency issue is resolved.
+// import Autoplay from "embla-carousel-autoplay";
 import { Loader } from "lucide-react";
 
 export default function Home() {
@@ -48,12 +49,12 @@ export default function Home() {
                 align: "start",
                 loop: true,
               }}
-              plugins={[
-                Autoplay({
-                  delay: 4000,
-                  stopOnInteraction: true,
-                }),
-              ]}
+              // plugins={[
+              //   Autoplay({
+              //     delay: 4000,
+              //     stopOnInteraction: true,
+              //   }),
+              // ]}
               className="w-full"
             >
               <CarouselContent>
