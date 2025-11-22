@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart4, Package, Settings, Users, Megaphone } from 'lucide-react';
+import { BarChart4, Package, Settings, Users, Megaphone, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useEffect } from 'react';
@@ -15,12 +15,19 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     // If user is a branch admin, redirect them directly to the reporting page
     if (user?.role === 'admin') {
-      router.replace('/admin/reporting');
+      router.replace('/admin/orders');
     }
   }, [user, router]);
 
 
   const adminSections = [
+    {
+      title: 'Order Management',
+      description: 'View and manage live orders.',
+      href: '/admin/orders',
+      icon: ShoppingCart,
+      role: ['root', 'admin'],
+    },
     {
       title: 'Reporting',
       description: 'View sales analytics and trends.',

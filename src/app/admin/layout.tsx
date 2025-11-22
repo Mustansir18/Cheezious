@@ -11,6 +11,7 @@ import {
   Megaphone,
   Users,
   LogOut,
+  ShoppingCart,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -31,6 +32,7 @@ function AdminSidebar() {
 
   const navLinks = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, role: ['root', 'admin'] },
+    { href: '/admin/orders', label: 'Orders', icon: ShoppingCart, role: ['root', 'admin'] },
     { href: '/admin/reporting', label: 'Reporting', icon: BarChart4, role: ['root', 'admin'] },
     { href: '/admin/menu', label: 'Menu', icon: Package, role: ['root'] },
     { href: '/admin/deals', label: 'Deals', icon: Megaphone, role: ['root'] },

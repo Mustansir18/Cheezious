@@ -27,6 +27,27 @@ export interface HourlySale {
   sales: number;
 }
 
+function ReportCardActions({ reportId, onPrint }: { reportId: string; onPrint: (id: string) => void }) {
+    return (
+        <div className="flex items-center gap-2 print-hidden">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" disabled>
+                        <FileDown className="h-4 w-4"/>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Download report (coming soon)</p>
+                </TooltipContent>
+            </Tooltip>
+            <Button variant="ghost" size="icon" onClick={() => onPrint(reportId)}>
+                <Printer className="h-4 w-4"/>
+            </Button>
+        </div>
+    );
+}
+
+
 export default function ReportingPage() {
   const { orders, isLoading } = useOrders();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -305,41 +326,68 @@ export default function ReportingPage() {
       
       <div className="space-y-8">
           <div id="summary-report">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {summaryCards.map(card => (
-                        <Card key={card.title}>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-                                <card.icon className="h-5 w-5 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{card.value}</div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+             <Card>
+                <CardHeader className="flex-row justify-between items-center">
+                    <div>
+                        <CardTitle className="font-headline flex items-center">Overall Summary</CardTitle>
+                        <CardDescription>Top-level metrics for the selected period.</CardDescription>
+                    </div>
+                    <ReportCardActions reportId="summary-report" onPrint={handlePrint} />
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {summaryCards.map(card => (
+                            <Card key={card.title}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+                                    <card.icon className="h-5 w-5 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{card.value}</div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </CardContent>
+             </Card>
           </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {orderTypeCards.map(card => (
-                 <Card key={card.title}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-                        <card.icon className="h-5 w-5 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{card.value}</div>
-                        <p className="text-xs text-muted-foreground">{card.description}</p>
-                    </CardContent>
-                </Card>
-            ))}
+        <div id="ordertype-report">
+            <Card>
+                <CardHeader className="flex-row justify-between items-center">
+                    <div>
+                        <CardTitle className="font-headline flex items-center">Order Type Summary</CardTitle>
+                        <CardDescription>Transaction counts and sales totals by order type.</CardDescription>
+                    </div>
+                    <ReportCardActions reportId="ordertype-report" onPrint={handlePrint} />
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {orderTypeCards.map(card => (
+                             <Card key={card.title}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+                                    <card.icon className="h-5 w-5 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{card.value}</div>
+                                    <p className="text-xs text-muted-foreground">{card.description}</p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
         </div>
           
         <div id="dine-in-breakdown">
              <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center"><Utensils className="mr-2 h-5 w-5 text-primary"/>Dine-In Sales Breakdown</CardTitle>
-                    <CardDescription>Detailed sales figures for Dine-In orders for the selected period.</CardDescription>
+                <CardHeader className="flex-row justify-between items-center">
+                    <div>
+                        <CardTitle className="font-headline flex items-center"><Utensils className="mr-2 h-5 w-5 text-primary"/>Dine-In Sales Breakdown</CardTitle>
+                        <CardDescription>Detailed sales figures for Dine-In orders for the selected period.</CardDescription>
+                    </div>
+                     <ReportCardActions reportId="dine-in-breakdown" onPrint={handlePrint} />
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     {dineInBreakdown.map(item => (
@@ -354,9 +402,12 @@ export default function ReportingPage() {
 
         <div id="take-away-breakdown">
              <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center"><ShoppingBag className="mr-2 h-5 w-5 text-primary"/>Take Away Sales Breakdown</CardTitle>
-                    <CardDescription>Detailed sales figures for Take Away orders for the selected period.</CardDescription>
+                <CardHeader className="flex-row justify-between items-center">
+                    <div>
+                        <CardTitle className="font-headline flex items-center"><ShoppingBag className="mr-2 h-5 w-5 text-primary"/>Take Away Sales Breakdown</CardTitle>
+                        <CardDescription>Detailed sales figures for Take Away orders for the selected period.</CardDescription>
+                    </div>
+                    <ReportCardActions reportId="take-away-breakdown" onPrint={handlePrint} />
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     {takeAwayBreakdown.map(item => (
@@ -372,9 +423,12 @@ export default function ReportingPage() {
 
           <div id="payment-report">
             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center"><CreditCard className="mr-2 h-5 w-5 text-primary"/>Payment Method Breakdown</CardTitle>
-                    <CardDescription>Number of orders per payment method for the selected period.</CardDescription>
+                <CardHeader className="flex-row justify-between items-center">
+                    <div>
+                        <CardTitle className="font-headline flex items-center"><CreditCard className="mr-2 h-5 w-5 text-primary"/>Payment Method Breakdown</CardTitle>
+                        <CardDescription>Number of orders per payment method for the selected period.</CardDescription>
+                    </div>
+                    <ReportCardActions reportId="payment-report" onPrint={handlePrint} />
                 </CardHeader>
                 <CardContent>
                     {Object.keys(paymentMethodCounts).length > 0 ? (
@@ -406,5 +460,3 @@ export default function ReportingPage() {
     </TooltipProvider>
   );
 }
-
-    
