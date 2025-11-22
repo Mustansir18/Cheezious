@@ -39,16 +39,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Load users from localStorage on initial render
   useEffect(() => {
+    setIsLoading(true);
     try {
-      const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-      if (storedUsers) {
-        const parsedUsers = JSON.parse(storedUsers);
-        // Ensure root user is always present
-        if (!parsedUsers.some((u: User) => u.id === rootUser.id)) {
-            setUsers([rootUser, ...parsedUsers]);
-        } else {
-            setUsers(parsedUsers);
-        }
+      const storedUsersJSON = localStorage.getItem(USERS_STORAGE_KEY);
+      let loadedUsers: User[] = [];
+      if (storedUsersJSON) {
+        loadedUsers = JSON.parse(storedUsersJSON);
+      }
+
+      // Ensure root user is always present and has the correct password
+      const rootUserInStorage = loadedUsers.find(u => u.id === rootUser.id);
+      if (!rootUserInStorage) {
+        // If root user isn't in storage, add it.
+        setUsers([rootUser, ...loadedUsers]);
+      } else {
+        // If root user is in storage, ensure its password is correct.
+        const otherUsers = loadedUsers.filter(u => u.id !== rootUser.id);
+        setUsers([rootUser, ...otherUsers]);
       }
 
       const sessionUser = sessionStorage.getItem(SESSION_STORAGE_KEY);
@@ -57,6 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       console.error("Failed to initialize auth state:", error);
+      setUsers([rootUser]); // Reset to default if storage is corrupt
     } finally {
       setIsLoading(false);
     }
@@ -64,18 +72,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Persist users to localStorage whenever they change
   useEffect(() => {
+    if (isLoading) return;
     try {
-        // Don't store passwords in local storage for security, except for the initial setup.
-        // In a real app, passwords would be hashed and stored securely in a database.
+        // Don't store passwords in local storage for security.
+        // The root user password will be re-added on load.
         const usersToStore = users.map(({password, ...user}) => user);
         localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersToStore));
     } catch (error) {
       console.error("Could not save users to local storage", error);
     }
-  }, [users]);
+  }, [users, isLoading]);
   
   // Persist current user to sessionStorage
   useEffect(() => {
+      if (isLoading) return;
       try {
           if (user) {
               sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
@@ -85,7 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
           console.error("Could not save session to session storage", error);
       }
-  }, [user]);
+  }, [user, isLoading]);
 
   const login = useCallback(async (username: string, password: string): Promise<User | null> => {
     const foundUser = users.find(u => u.username === username && u.password === password);
