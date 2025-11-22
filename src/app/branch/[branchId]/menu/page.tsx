@@ -29,7 +29,7 @@ export default function MenuPage({ params: { branchId } }: { params: { branchId:
     }
   }, [searchParams, branchId, setOrderDetails]);
 
-  const categories = [...new Set(menuItems.map((item) => item.category))];
+  const categories = ['Deals', 'Pizzas', 'Burgers', 'Sides', 'Drinks'];
 
   return (
     <div className="container mx-auto px-4 py-8">
