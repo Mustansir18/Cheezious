@@ -4,9 +4,29 @@ This document provides a comprehensive guide for deploying the Cheezious Connect
 
 ## 1. Prerequisites
 
-Before you begin, ensure your Windows Server (2019, 2022, or newer recommended) has the following software installed:
+Before you begin, ensure your Windows Server (2019, 2022, or newer recommended) has the necessary hardware and software.
 
-### 1.1. Node.js and npm
+### 1.1. Hardware Requirements
+
+The actual requirements will vary based on customer traffic and order volume. However, the following specifications provide a good starting point.
+
+#### Minimum Requirements (for testing or low traffic)
+- **CPU:** 2 Cores
+- **RAM:** 4 GB
+- **Storage:** 40 GB SSD
+- **OS:** Windows Server 2019 or newer
+
+#### Recommended Requirements (for production)
+- **CPU:** 4+ Cores
+- **RAM:** 8+ GB
+- **Storage:** 80+ GB SSD (Solid State Drive is highly recommended for performance)
+- **OS:** Windows Server 2022 or newer
+
+### 1.2. Software Prerequisites
+
+Ensure the following software is installed on your server:
+
+#### 1.2.1. Node.js and npm
 The application is built on Node.js.
 - **Download:** Get the latest LTS version from the [official Node.js website](https://nodejs.org/).
 - **Installation:** Run the installer and follow the on-screen instructions. The installer includes `npm` (Node Package Manager).
@@ -16,7 +36,7 @@ The application is built on Node.js.
   npm -v
   ```
 
-### 1.2. IIS (Internet Information Services)
+#### 1.2.2. IIS (Internet Information Services)
 IIS will act as a reverse proxy, directing incoming web traffic to the running Node.js application.
 - **Installation:**
   1. Open **Server Manager**.
@@ -26,12 +46,12 @@ IIS will act as a reverse proxy, directing incoming web traffic to the running N
   5. Under "Server Roles", check **Web Server (IIS)**.
   6. Proceed with the default features and complete the installation.
 
-### 1.3. IIS Modules: URL Rewrite and ARR
+#### 1.2.3. IIS Modules: URL Rewrite and ARR
 These modules are essential for IIS to function as a reverse proxy.
 - **URL Rewrite:** Allows IIS to modify request URLs. Download and install it from [here](https://www.iis.net/downloads/microsoft/url-rewrite).
 - **Application Request Routing (ARR):** Enables request forwarding. Download and install it from [here](https://www.iis.net/downloads/microsoft/application-request-routing). After installation, open IIS Manager, click your server name, find "Application Request Routing Cache," open it, and under "Actions" on the right, click **Server Proxy Settings...** and check **Enable proxy**.
 
-### 1.4. PM2 (Process Manager)
+#### 1.2.4. PM2 (Process Manager)
 PM2 is a production process manager for Node.js applications. It will keep your application running continuously and restart it if it crashes.
 - **Installation:** Open PowerShell or Command Prompt and install it globally:
   ```powershell
