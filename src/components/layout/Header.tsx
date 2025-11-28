@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Package } from "lucide-react";
+import { ShoppingCart, Pizza } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { CartSheet } from "@/components/cart/CartSheet";
@@ -18,7 +18,7 @@ export default function Header({ branchId }: { branchId: string }) {
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <Package className="h-8 w-8" />
+          <Pizza className="h-8 w-8" />
           <span className="hidden font-headline text-xl font-bold text-primary sm:inline-block">
             {settings.companyName}
           </span>
