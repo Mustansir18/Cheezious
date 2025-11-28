@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Floor, Table, PaymentMethod } from '@/lib/types';
-import { branches as initialBranches } from '@/lib/data';
+import { branches as initialBranchesData } from '@/lib/data';
 
 interface BranchSetting {
     id: string;
@@ -23,6 +23,7 @@ interface Settings {
     businessDayEnd: string;
     companyName: string;
     logoUrl: string;
+    defaultBranchId: string | null;
 }
 
 interface SettingsContextType {
@@ -39,6 +40,8 @@ interface SettingsContextType {
   toggleService: (branchId: string, service: 'dineInEnabled' | 'takeAwayEnabled', enabled: boolean) => void;
   updateBusinessDayHours: (start: string, end: string) => void;
   updateBranding: (name: string, logoUrl: string) => void;
+  addBranch: (name: string, location: string) => void;
+  setDefaultBranch: (branchId: string) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -60,7 +63,7 @@ const defaultTables: Table[] = Array.from({ length: 10 }, (_, i) => ({
     floorId: 'ground-floor'
 }));
 
-const enhancedInitialBranches: BranchSetting[] = initialBranches.map(branch => ({
+const enhancedInitialBranches: BranchSetting[] = initialBranchesData.map(branch => ({
     ...branch,
     dineInEnabled: true,
     takeAwayEnabled: true,
@@ -75,7 +78,8 @@ const initialSettings: Settings = {
     businessDayStart: '11:00',
     businessDayEnd: '04:00',
     companyName: 'Cheezious',
-    logoUrl: 'https://cheezious.com/images/logo.png'
+    logoUrl: 'https://cheezious.com/images/logo.png',
+    defaultBranchId: 'j3-johar-town-lahore',
 };
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
@@ -102,11 +106,12 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             tables: parsed.tables && parsed.tables.length > 0 ? parsed.tables : defaultTables,
             paymentMethods: [...defaultPaymentMethods, ...customMethods],
             autoPrintReceipts: parsed.autoPrintReceipts || false,
-            branches: branches,
+            branches: branches.length > 0 ? branches : enhancedInitialBranches,
             businessDayStart: parsed.businessDayStart || initialSettings.businessDayStart,
             businessDayEnd: parsed.businessDayEnd || initialSettings.businessDayEnd,
             companyName: parsed.companyName || initialSettings.companyName,
             logoUrl: parsed.logoUrl || initialSettings.logoUrl,
+            defaultBranchId: parsed.defaultBranchId || initialSettings.defaultBranchId,
         });
       } else {
         setSettings(initialSettings);
@@ -190,6 +195,22 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     setSettings(s => ({ ...s, companyName: name, logoUrl: logoUrl }));
   }, []);
 
+  const addBranch = useCallback((name: string, location: string) => {
+    const newBranch: BranchSetting = {
+      id: crypto.randomUUID(),
+      name,
+      location,
+      dineInEnabled: true,
+      takeAwayEnabled: true,
+    };
+    setSettings(s => ({ ...s, branches: [...s.branches, newBranch] }));
+  }, []);
+
+  const setDefaultBranch = useCallback((branchId: string) => {
+    setSettings(s => ({ ...s, defaultBranchId: branchId }));
+  }, []);
+
+
   return (
     <SettingsContext.Provider
       value={{
@@ -206,6 +227,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         toggleService,
         updateBusinessDayHours,
         updateBranding,
+        addBranch,
+        setDefaultBranch,
       }}
     >
       {children}
@@ -220,3 +243,5 @@ export const useSettings = () => {
   }
   return context;
 };
+
+    

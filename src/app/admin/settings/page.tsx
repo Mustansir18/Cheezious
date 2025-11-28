@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 
 export default function AdminSettingsPage() {
-    const { settings, addFloor, deleteFloor, addTable, deleteTable, addPaymentMethod, deletePaymentMethod, toggleAutoPrint, updateBranch, toggleService, updateBusinessDayHours, updateBranding } = useSettings();
+    const { settings, addFloor, deleteFloor, addTable, deleteTable, addPaymentMethod, deletePaymentMethod, toggleAutoPrint, updateBranch, toggleService, updateBusinessDayHours, updateBranding, addBranch, setDefaultBranch } = useSettings();
     const { user } = useAuth();
 
     const [newFloorName, setNewFloorName] = useState("");
@@ -41,6 +41,9 @@ export default function AdminSettingsPage() {
     const [companyName, setCompanyName] = useState(settings.companyName);
     const [logoUrl, setLogoUrl] = useState(settings.logoUrl);
     const [logoPreview, setLogoPreview] = useState(settings.logoUrl);
+
+    const [newBranchName, setNewBranchName] = useState('');
+    const [newBranchLocation, setNewBranchLocation] = useState('');
 
     useEffect(() => {
         setBusinessDayStart(settings.businessDayStart);
@@ -99,6 +102,14 @@ export default function AdminSettingsPage() {
 
     const handleSaveBranding = () => {
         updateBranding(companyName, logoUrl);
+    };
+
+    const handleAddBranch = () => {
+        if (newBranchName.trim() && newBranchLocation.trim()) {
+            addBranch(newBranchName.trim(), newBranchLocation.trim());
+            setNewBranchName('');
+            setNewBranchLocation('');
+        }
     };
 
     const defaultPaymentMethodIds = ['cash', 'card'];
@@ -164,6 +175,25 @@ export default function AdminSettingsPage() {
                     <CardDescription>Configure settings for each restaurant branch.</CardDescription>
                 </CardHeader>
                 <CardContent>
+                     { user?.role === 'root' && (
+                        <div className="mb-6 p-4 border rounded-lg space-y-4">
+                            <h4 className="font-semibold">Add New Branch</h4>
+                             <div className="grid md:grid-cols-3 gap-2">
+                                <Input
+                                    placeholder="New branch name"
+                                    value={newBranchName}
+                                    onChange={(e) => setNewBranchName(e.target.value)}
+                                />
+                                <Input
+                                    placeholder="Branch location (e.g., City, Area)"
+                                    value={newBranchLocation}
+                                    onChange={(e) => setNewBranchLocation(e.target.value)}
+                                />
+                                <Button onClick={handleAddBranch}>Add Branch</Button>
+                            </div>
+                        </div>
+                     )}
+
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -202,6 +232,35 @@ export default function AdminSettingsPage() {
                     </Table>
                 </CardContent>
             </Card>
+            
+            {/* Default Branch Settings */}
+             { user?.role === 'root' && (
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Default Branch</CardTitle>
+                        <CardDescription>Select the default branch for the main landing page.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                            <div className="space-y-2">
+                                <Label htmlFor="default-branch-select">Default Branch for Homepage</Label>
+                                <Select value={settings.defaultBranchId} onValueChange={setDefaultBranch}>
+                                    <SelectTrigger id="default-branch-select">
+                                        <SelectValue placeholder="Select a default branch" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {settings.branches.map(branch => (
+                                            <SelectItem key={branch.id} value={branch.id}>
+                                                {branch.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+             )}
 
             {/* Business Day Settings */}
             <Card>
@@ -418,3 +477,5 @@ export default function AdminSettingsPage() {
         </div>
     );
 }
+
+    

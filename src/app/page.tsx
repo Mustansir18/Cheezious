@@ -21,7 +21,6 @@ import { useSettings } from "@/context/SettingsContext";
 export default function Home() {
   const { deals, isLoading: isDealsLoading } = useDeals();
   const { settings, isLoading: isSettingsLoading } = useSettings();
-  const defaultBranch = settings.branches.find(b => b.id === 'j3-johar-town-lahore');
   
   const isLoading = isDealsLoading || isSettingsLoading;
 
@@ -36,8 +35,8 @@ export default function Home() {
           Your seamless digital dining experience starts here.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 mt-6">
-            <Button asChild size="lg" disabled={!defaultBranch}>
-              <Link href={`/branch/${defaultBranch?.id || ''}`}>Start Your Order</Link>
+            <Button asChild size="lg" disabled={!settings.defaultBranchId}>
+              <Link href={`/branch/${settings.defaultBranchId || ''}`}>Start Your Order</Link>
             </Button>
             <Button asChild size="lg" variant="outline">
               <Link href="/recall-order">
@@ -109,3 +108,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
