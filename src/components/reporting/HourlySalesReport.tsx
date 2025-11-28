@@ -3,6 +3,7 @@
 import type { HourlySale } from '@/app/admin/reporting/page';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Printer, FileDown } from 'lucide-react';
 import {
   Bar,
@@ -13,14 +14,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface HourlySalesReportProps {
   data: HourlySale[];
   onPrint: () => void;
+  onDownload: (format: 'pdf' | 'excel') => void;
 }
 
-export function HourlySalesReport({ data, onPrint }: HourlySalesReportProps) {
+export function HourlySalesReport({ data, onPrint, onDownload }: HourlySalesReportProps) {
   return (
     <Card className="h-full">
       <CardHeader className="flex-row justify-between items-center">
@@ -29,16 +30,17 @@ export function HourlySalesReport({ data, onPrint }: HourlySalesReportProps) {
             <CardDescription>Total revenue generated per hour for the selected period.</CardDescription>
         </div>
         <div className="flex items-center gap-2 print-hidden">
-            <UITooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" disabled>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
                         <FileDown className="h-4 w-4"/>
                     </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Download report (coming soon)</p>
-                </TooltipContent>
-            </UITooltip>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onDownload('pdf')}>Save as PDF</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDownload('excel')}>Save as Excel</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="ghost" size="icon" onClick={onPrint}>
                 <Printer className="h-4 w-4"/>
             </Button>

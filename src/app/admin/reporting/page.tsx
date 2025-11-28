@@ -11,10 +11,13 @@ import { TopSellingItems } from "@/components/reporting/TopSellingItems";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from 'xlsx';
 
 export interface ItemSale {
   name: string;
@@ -27,19 +30,28 @@ export interface HourlySale {
   sales: number;
 }
 
-function ReportCardActions({ reportId, onPrint }: { reportId: string; onPrint: (id: string) => void }) {
+function ReportCardActions({ 
+    reportId, 
+    onPrint, 
+    onDownload 
+}: { 
+    reportId: string; 
+    onPrint: (id: string) => void;
+    onDownload: (id: string, format: 'pdf' | 'excel') => void;
+}) {
     return (
         <div className="flex items-center gap-2 print-hidden">
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" disabled>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
                         <FileDown className="h-4 w-4"/>
                     </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Download report (coming soon)</p>
-                </TooltipContent>
-            </Tooltip>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onDownload(reportId, 'pdf')}>Save as PDF</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDownload(reportId, 'excel')}>Save as Excel</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="ghost" size="icon" onClick={() => onPrint(reportId)}>
                 <Printer className="h-4 w-4"/>
             </Button>
@@ -184,6 +196,92 @@ export default function ReportingPage() {
     document.body.classList.remove('printing-active');
   };
 
+  const handleDownload = (reportId: string, format: 'pdf' | 'excel') => {
+    if (!reportData) return;
+    const { topSellingItems, hourlySalesChartData, ...rest } = reportData;
+    const doc = new jsPDF();
+    const dateStr = `Report for ${format(dateRange?.from || new Date(), "LLL dd, y")} - ${format(dateRange?.to || new Date(), "LLL dd, y")}`;
+
+    const generatePdf = (title: string, head: any[], body: any[]) => {
+        doc.text(title, 14, 15);
+        doc.text(dateStr, 14, 22);
+        autoTable(doc, { head, body, startY: 30 });
+        doc.save(`${title.toLowerCase().replace(/ /g, '_')}.pdf`);
+    };
+
+    const generateExcel = (data: any[], filename: string, sheetName: string) => {
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        XLSX.writeFile(wb, `${filename}.xlsx`);
+    };
+
+    switch (reportId) {
+        case 'summary-report': {
+            const data = [
+                { metric: "Total Sales", value: `RS ${rest.totalSales.toFixed(2)}` },
+                { metric: "Total Orders", value: rest.totalOrders },
+                { metric: "Total Items Sold", value: rest.totalItemsSold },
+            ];
+            if (format === 'pdf') generatePdf('Overall Summary', [['Metric', 'Value']], data.map(Object.values));
+            else generateExcel(data, 'overall_summary', 'Summary');
+            break;
+        }
+        case 'ordertype-report': {
+            const data = [
+                { type: "Dine-In Orders", count: rest.dineInCount, sales: `RS ${rest.dineInSales.toFixed(2)}` },
+                { type: "Take Away Orders", count: rest.takeAwayCount, sales: `RS ${rest.takeAwaySales.toFixed(2)}` },
+            ];
+            if (format === 'pdf') generatePdf('Order Type Summary', [['Order Type', 'Count', 'Sales']], data.map(Object.values));
+            else generateExcel(data, 'order_type_summary', 'Order Types');
+            break;
+        }
+        case 'dine-in-breakdown': {
+            const data = [
+                { metric: "Gross Sales", value: `RS ${rest.dineInGrossSales.toFixed(2)}` },
+                { metric: "Net Sales", value: `RS ${rest.dineInNetSales.toFixed(2)}` },
+                { metric: "Total Tax", value: `RS ${rest.dineInTax.toFixed(2)}` },
+                { metric: "Cash Sales", value: `RS ${rest.dineInCashSales.toFixed(2)}` },
+                { metric: "Card Sales", value: `RS ${rest.dineInCardSales.toFixed(2)}` },
+            ];
+            if (format === 'pdf') generatePdf('Dine-In Sales Breakdown', [['Metric', 'Value']], data.map(Object.values));
+            else generateExcel(data, 'dine_in_breakdown', 'Dine-In');
+            break;
+        }
+        case 'take-away-breakdown': {
+            const data = [
+                { metric: "Gross Sales", value: `RS ${rest.takeAwayGrossSales.toFixed(2)}` },
+                { metric: "Net Sales", value: `RS ${rest.takeAwayNetSales.toFixed(2)}` },
+                { metric: "Total Tax", value: `RS ${rest.takeAwayTax.toFixed(2)}` },
+                { metric: "Cash Sales", value: `RS ${rest.takeAwayCashSales.toFixed(2)}` },
+                { metric: "Card Sales", value: `RS ${rest.takeAwayCardSales.toFixed(2)}` },
+            ];
+            if (format === 'pdf') generatePdf('Take Away Sales Breakdown', [['Metric', 'Value']], data.map(Object.values));
+            else generateExcel(data, 'take_away_breakdown', 'Take Away');
+            break;
+        }
+        case 'payment-report': {
+            const data = Object.entries(rest.paymentMethodCounts).map(([method, count]) => ({ method, count }));
+            if (format === 'pdf') generatePdf('Payment Method Breakdown', [['Method', 'Count']], data.map(Object.values));
+            else generateExcel(data, 'payment_methods', 'Payments');
+            break;
+        }
+        case 'hourly-sales-report': {
+            const data = hourlySalesChartData.map(d => ({ Hour: d.hour, Sales: `RS ${d.sales.toFixed(2)}` }));
+            if (format === 'pdf') generatePdf('Hourly Sales', [['Hour', 'Sales']], data.map(Object.values));
+            else generateExcel(data, 'hourly_sales', 'Hourly Sales');
+            break;
+        }
+        case 'top-items-report': {
+            const data = topSellingItems.map(d => ({ Item: d.name, Quantity: d.quantity, Revenue: `RS ${d.totalRevenue.toFixed(2)}` }));
+            if (format === 'pdf') generatePdf('Top Selling Items', [['Item', 'Quantity', 'Revenue']], data.map(Object.values));
+            else generateExcel(data, 'top_selling_items', 'Top Items');
+            break;
+        }
+    }
+  };
+
+
   useEffect(() => {
     const afterPrint = () => {
       document.body.classList.remove('printing-active');
@@ -277,7 +375,6 @@ export default function ReportingPage() {
   ]
 
   return (
-    <TooltipProvider>
     <div className="container mx-auto p-4 lg:p-8">
       <header className="mb-8 flex flex-col md:flex-row justify-between items-start gap-4">
         <div>
@@ -332,7 +429,7 @@ export default function ReportingPage() {
                         <CardTitle className="font-headline flex items-center">Overall Summary</CardTitle>
                         <CardDescription>Top-level metrics for the selected period.</CardDescription>
                     </div>
-                    <ReportCardActions reportId="summary-report" onPrint={handlePrint} />
+                    <ReportCardActions reportId="summary-report" onPrint={handlePrint} onDownload={handleDownload} />
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -359,7 +456,7 @@ export default function ReportingPage() {
                         <CardTitle className="font-headline flex items-center">Order Type Summary</CardTitle>
                         <CardDescription>Transaction counts and sales totals by order type.</CardDescription>
                     </div>
-                    <ReportCardActions reportId="ordertype-report" onPrint={handlePrint} />
+                    <ReportCardActions reportId="ordertype-report" onPrint={handlePrint} onDownload={handleDownload} />
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -387,7 +484,7 @@ export default function ReportingPage() {
                         <CardTitle className="font-headline flex items-center"><Utensils className="mr-2 h-5 w-5 text-primary"/>Dine-In Sales Breakdown</CardTitle>
                         <CardDescription>Detailed sales figures for Dine-In orders for the selected period.</CardDescription>
                     </div>
-                     <ReportCardActions reportId="dine-in-breakdown" onPrint={handlePrint} />
+                     <ReportCardActions reportId="dine-in-breakdown" onPrint={handlePrint} onDownload={handleDownload} />
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     {dineInBreakdown.map(item => (
@@ -407,7 +504,7 @@ export default function ReportingPage() {
                         <CardTitle className="font-headline flex items-center"><ShoppingBag className="mr-2 h-5 w-5 text-primary"/>Take Away Sales Breakdown</CardTitle>
                         <CardDescription>Detailed sales figures for Take Away orders for the selected period.</CardDescription>
                     </div>
-                    <ReportCardActions reportId="take-away-breakdown" onPrint={handlePrint} />
+                    <ReportCardActions reportId="take-away-breakdown" onPrint={handlePrint} onDownload={handleDownload} />
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     {takeAwayBreakdown.map(item => (
@@ -428,7 +525,7 @@ export default function ReportingPage() {
                         <CardTitle className="font-headline flex items-center"><CreditCard className="mr-2 h-5 w-5 text-primary"/>Payment Method Breakdown</CardTitle>
                         <CardDescription>Number of orders per payment method for the selected period.</CardDescription>
                     </div>
-                    <ReportCardActions reportId="payment-report" onPrint={handlePrint} />
+                    <ReportCardActions reportId="payment-report" onPrint={handlePrint} onDownload={handleDownload} />
                 </CardHeader>
                 <CardContent>
                     {Object.keys(paymentMethodCounts).length > 0 ? (
@@ -449,14 +546,13 @@ export default function ReportingPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
               <div className="lg:col-span-3" id="hourly-sales-report">
-                  <HourlySalesReport data={hourlySalesChartData} onPrint={() => handlePrint('hourly-sales-report')} />
+                  <HourlySalesReport data={hourlySalesChartData} onPrint={() => handlePrint('hourly-sales-report')} onDownload={(format) => handleDownload('hourly-sales-report', format)} />
               </div>
               <div className="lg:col-span-2" id="top-items-report">
-                  <TopSellingItems data={topSellingItems} onPrint={() => handlePrint('top-items-report')} />
+                  <TopSellingItems data={topSellingItems} onPrint={() => handlePrint('top-items-report')} onDownload={(format) => handleDownload('top-items-report', format)} />
               </div>
           </div>
       </div>
     </div>
-    </TooltipProvider>
   );
 }

@@ -18,16 +18,17 @@ import {
 } from '@/components/ui/table';
 import { ScrollArea } from '../ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Printer, FileDown } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 interface TopSellingItemsProps {
   data: ItemSale[];
   onPrint: () => void;
+  onDownload: (format: 'pdf' | 'excel') => void;
 }
 
-export function TopSellingItems({ data, onPrint }: TopSellingItemsProps) {
+export function TopSellingItems({ data, onPrint, onDownload }: TopSellingItemsProps) {
   return (
     <Card className="h-full">
       <CardHeader className="flex-row justify-between items-center">
@@ -38,16 +39,17 @@ export function TopSellingItems({ data, onPrint }: TopSellingItemsProps) {
             </CardDescription>
         </div>
          <div className="flex items-center gap-2 print-hidden">
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" disabled>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
                         <FileDown className="h-4 w-4"/>
                     </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Download report (coming soon)</p>
-                </TooltipContent>
-            </Tooltip>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onDownload('pdf')}>Save as PDF</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDownload('excel')}>Save as Excel</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="ghost" size="icon" onClick={onPrint}>
                 <Printer className="h-4 w-4"/>
             </Button>
