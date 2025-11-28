@@ -1,6 +1,6 @@
 # Cheezious Connect: Deployment Manual for Windows Server
 
-This document provides a comprehensive guide for deploying the Cheezious Connect Next.js application on a Windows Server machine for integration with Microsoft Dynamics 365.
+This document provides a comprehensive guide for deploying the Cheezious Connect Next.js application on a Windows Server machine for use as a self-service kiosk.
 
 ## 1. Prerequisites
 
@@ -63,20 +63,12 @@ PM2 is a production process manager for Node.js applications. It will keep your 
 Follow these steps to deploy the application on your server.
 
 ### Step 2.1: Prepare the Application
-1. **Copy Files:** Transfer the entire application folder to a directory on your server (e.g., `C:\inetpub\wwwroot\cheezious-connect`).
+1. **Copy Files:** Transfer the entire `Cheezious_kiosk` application folder to a directory on your server (e.g., `C:\inetpub\wwwroot\cheezious-connect`).
 2. **Install Dependencies:** Navigate to the application directory in PowerShell or Command Prompt and run:
    ```powershell
    npm install
    ```
-3. **Configure Environment Variables:**
-   - Create a new file named `.env.production.local` in the root of the application folder.
-   - Open the file and add the following line, replacing the URL with your actual Dynamics 365 Retail Server endpoint for creating customer orders:
-     ```
-     DYNAMICS_RSSU_API_ENDPOINT=https://your-d365-environment.dynamics.com/Commerce/customerorders
-     ```
-   - **Important:** Ensure this endpoint is correct and accessible from your server. This is the URL the application will `POST` new order data to.
-
-4. **Build the Application:** Run the production build command. This compiles the application into an optimized set of files.
+3. **Build the Application:** Run the production build command. This compiles the application into an optimized set of files.
    ```powershell
    npm run build
    ```
@@ -131,21 +123,21 @@ Your `web.config` file in the application's root directory should now contain a 
 </configuration>
 ```
 
-## 3. Real-time Order Sync with Dynamics 365
+## 3. Application Operation
 
-The application is configured to send order data to the endpoint specified in your `DYNAMICS_RSSU_API_ENDPOINT` environment variable.
-
-- **Data Flow:** When a customer places an order, the `syncOrderToExternalSystem` function in `src/ai/flows/sync-order-flow.ts` is triggered.
-- **Payload:** It sends a `POST` request with a JSON body containing the complete order details (`SyncOrderInput` type from `src/lib/types.ts`).
-- **Authentication:** The current flow does **not** include authentication. For a production Dynamics 365 environment, you must implement an OAuth 2.0 client credentials flow to acquire a bearer token from Azure Active Directory. This token must then be included in the `Authorization` header of the request. The code contains a commented-out placeholder for this logic.
+The Cheezious Connect application is now running as a standalone system.
+- **Order Management:** All orders placed through the kiosk are stored locally in the browser's session storage. Order data is managed within the application and can be viewed in the Admin and Cashier dashboards.
+- **Data Persistence:** Order data persists for the duration of a browser session. Closing the browser or clearing session data will remove the order history.
+- **External Sync:** The integration with external systems like Microsoft Dynamics 365 has been disabled. The `syncOrderToExternalSystem` function in `src/ai/flows/sync-order-flow.ts` is configured to process orders internally and will not make external API calls.
 
 ## 4. Final Verification
 
-- Open a web browser and navigate to the hostname you configured in IIS (e.g., `http://cheezious.yourdomain.com`).
+- Open a web browser on the server or a client machine and navigate to the hostname you configured in IIS (e.g., `http://cheezious.yourdomain.com`).
 - The Cheezious Connect homepage should load.
-- Place a test order and monitor the `pm2` logs to confirm the order is being sent to your Dynamics 365 endpoint. You can view logs with:
+- Place a test order and verify that it appears correctly in the Admin or Cashier dashboard within the application.
+- You can monitor the application logs using PM2:
   ```powershell
   pm2 logs cheezious-connect
   ```
 
-Your deployment is now complete. The application will run as a service on your Windows Server, proxied through IIS, and will send order data to your Dynamics 365 instance.
+Your deployment is now complete. The application will run as a service on your Windows Server, proxied through IIS, and manage orders as a self-contained system.
