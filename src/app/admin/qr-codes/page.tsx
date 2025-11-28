@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -11,15 +12,16 @@ import { Label } from '@/components/ui/label';
 import { Utensils, ShoppingBag, Printer, Download, Image as ImageIcon } from 'lucide-react';
 import type { Table, Floor } from '@/lib/types';
 import jsPDF from "jspdf";
-import { CheeziousLogo } from '@/components/icons/CheeziousLogo';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 // We will use html2canvas which needs to be added as a dependency.
 // For now, let's assume it's available. If not, this code will need to be adapted.
 // Let's create a dynamic script loader for it.
 
 const loadHtml2Canvas = () => {
-  return new Promise((resolve, reject) => {
-    if (document.getElementById('html2canvas-script')) {
+  return new Promise<any>((resolve, reject) => {
+    const existingScript = document.getElementById('html2canvas-script');
+    if (existingScript && (window as any).html2canvas) {
       resolve((window as any).html2canvas);
       return;
     }
@@ -46,77 +48,80 @@ interface QRCodeDisplayProps {
 
 function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchName, qrId }: QRCodeDisplayProps) {
   const { Canvas } = useQRCode();
-  const qrCardRef = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
-  const captureCard = async () => {
+  const captureCardAsCanvas = useCallback(async () => {
     const html2canvas = await loadHtml2Canvas();
-    if (!qrCardRef.current || !html2canvas) {
+    if (!printRef.current || !html2canvas) {
       console.error("Card element not found or html2canvas not loaded.");
       return null;
     }
-    // Temporarily remove box shadow for cleaner capture
-    qrCardRef.current.style.boxShadow = 'none';
-    const canvas = await html2canvas(qrCardRef.current, {
+
+    const canvas = await html2canvas(printRef.current, {
         scale: 3, // Increase scale for higher resolution
-        useCORS: true,
+        useCORS: true, // Important for external images/fonts
+        backgroundColor: null // Use the actual background from the element
     });
-    qrCardRef.current.style.boxShadow = ''; // Restore it
     return canvas;
-  };
+  }, []);
 
 
   const downloadAsPng = useCallback(async () => {
-    const canvas = await captureCard();
+    const canvas = await captureCardAsCanvas();
     if (canvas) {
         const link = document.createElement('a');
         link.download = `${title.toLowerCase().replace(/\s/g, '-')}-${subtitle?.toLowerCase().replace(/\s/g, '-') || 'qr'}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
     }
-  }, [title, subtitle]);
+  }, [title, subtitle, captureCardAsCanvas]);
 
   const downloadAsPdf = useCallback(async () => {
-     const canvas = await captureCard();
+     const canvas = await captureCardAsCanvas();
      if(canvas){
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'px',
+            // Use aspect ratio of the canvas for the PDF page size
             format: [canvas.width, canvas.height] 
         });
         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
         pdf.save(`${title.toLowerCase().replace(/\s/g, '-')}-${subtitle?.toLowerCase().replace(/\s/g, '-') || 'qr'}.pdf`);
      }
-  }, [title, subtitle]);
+  }, [title, subtitle, captureCardAsCanvas]);
 
   return (
-    <div className="flex flex-col items-center p-6 border-2 border-dashed rounded-xl break-inside-avoid shadow-lg bg-card">
-      <div ref={qrCardRef} className="text-center w-full bg-card p-8 rounded-lg">
-        <h3 className="text-3xl font-bold font-headline text-center">{companyName}</h3>
-        <p className="text-muted-foreground text-center mb-6 text-lg">{branchName}</p>
-        
-        <div className="flex justify-center">
-          <Canvas
-            text={url}
-            options={{
-              type: 'image/png',
-              quality: 1,
-              errorCorrectionLevel: 'M',
-              margin: 3,
-              scale: 4,
-              width: 200,
-              color: { dark: '#000000FF', light: '#FFFFFFFF' },
-            }}
-          />
+    <div className="flex flex-col items-center p-6 border-2 border-dashed rounded-xl break-inside-avoid">
+        {/* This is the element we will capture for export */}
+        <div ref={printRef} className="text-center w-full bg-card p-8 rounded-lg shadow-lg">
+            <h3 className="text-3xl font-bold font-headline text-center">{companyName}</h3>
+            <p className="text-muted-foreground text-center mb-6 text-lg">{branchName}</p>
+            
+            <div className="flex justify-center">
+            <Canvas
+                text={url}
+                options={{
+                    type: 'image/png',
+                    quality: 1,
+                    errorCorrectionLevel: 'M',
+                    margin: 3,
+                    scale: 4,
+                    width: 200,
+                    color: { dark: '#000000FF', light: '#FFFFFFFF' },
+                }}
+            />
+            </div>
+
+            <div className="text-center mt-6">
+                <Icon className="mx-auto h-12 w-12 text-primary" />
+                <h4 className="mt-2 text-2xl font-bold">{title}</h4>
+                {subtitle && <p className="text-xl font-semibold">{subtitle}</p>}
+                <p className="text-muted-foreground mt-2">Scan this code to begin your order.</p>
+            </div>
         </div>
 
-        <div className="text-center mt-6">
-          <Icon className="mx-auto h-12 w-12 text-primary" />
-          <h4 className="mt-2 text-2xl font-bold">{title}</h4>
-          {subtitle && <p className="text-xl font-semibold">{subtitle}</p>}
-          <p className="text-muted-foreground mt-2">Scan this code to begin your order.</p>
-        </div>
-      </div>
+        {/* These are the controls, which are not part of the captured element */}
        <div className="flex gap-2 mt-6 print-hidden w-full">
             <Button variant="outline" className="w-full" onClick={downloadAsPng}>
                 <ImageIcon className="mr-2 h-4 w-4" /> PNG
@@ -140,10 +145,10 @@ export default function QRCodesPage() {
       loadHtml2Canvas(); // Pre-load the script
       setOrigin(window.location.origin);
       if (settings.branches.length > 0) {
-        setSelectedBranchId(settings.branches[0].id);
+        setSelectedBranchId(settings.defaultBranchId || settings.branches[0].id);
       }
     }
-  }, [settings.branches]);
+  }, [settings.branches, settings.defaultBranchId]);
   
   const handlePrint = () => {
     window.print();
