@@ -9,9 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Utensils, ShoppingBag, Printer, Download, Image as ImageIcon } from 'lucide-react';
+import { Utensils, ShoppingBag, Printer, Download, Image as ImageIcon, File, FileImage } from 'lucide-react';
 import type { Table, Floor } from '@/lib/types';
 import jsPDF from "jspdf";
+import { toast } from '@/hooks/use-toast';
+
 
 const loadHtml2Canvas = () => {
   return new Promise<any>((resolve, reject) => {
@@ -51,11 +53,11 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
       console.error("Card element not found or html2canvas not loaded.");
       return null;
     }
-
+    
     const canvas = await html2canvas(printRef.current, {
         scale: 5, 
         useCORS: true,
-        backgroundColor: null 
+        backgroundColor: 'white'
     });
     return canvas;
   }, []);
@@ -65,11 +67,11 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
     const canvas = await captureCardAsCanvas();
     if (canvas) {
         const link = document.createElement('a');
-        link.download = `${title.toLowerCase().replace(/\s/g, '-')}-${subtitle?.toLowerCase().replace(/\s/g, '-') || 'qr'}.png`;
+        link.download = `${companyName}-${branchName}-${title}-${subtitle || 'qr'}.png`.toLowerCase().replace(/\s/g, '-');
         link.href = canvas.toDataURL('image/png');
         link.click();
     }
-  }, [title, subtitle, captureCardAsCanvas]);
+  }, [title, subtitle, companyName, branchName, captureCardAsCanvas]);
 
   const downloadAsPdf = useCallback(async () => {
      const canvas = await captureCardAsCanvas();
@@ -81,13 +83,13 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
             format: [canvas.width, canvas.height] 
         });
         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save(`${title.toLowerCase().replace(/\s/g, '-')}-${subtitle?.toLowerCase().replace(/\s/g, '-') || 'qr'}.pdf`);
+        pdf.save(`${companyName}-${branchName}-${title}-${subtitle || 'qr'}.pdf`.toLowerCase().replace(/\s/g, '-'));
      }
-  }, [title, subtitle, captureCardAsCanvas]);
+  }, [title, subtitle, companyName, branchName, captureCardAsCanvas]);
 
   return (
-    <div className="flex flex-col items-center p-6 border-2 border-dashed rounded-xl break-inside-avoid">
-        <div ref={printRef} className="text-center w-full bg-card p-8 rounded-lg shadow-lg">
+    <div id={qrId} className="flex flex-col items-center p-6 border-2 border-dashed rounded-xl break-inside-avoid bg-card">
+        <div ref={printRef} className="text-center w-full bg-card p-8 rounded-lg">
             <h3 className="text-3xl font-bold font-headline text-center text-primary">{companyName}</h3>
             <p className="text-amber-800 text-center mb-6 text-lg font-semibold">{branchName}</p>
             
@@ -150,14 +152,92 @@ export default function QRCodesPage() {
     window.print();
   };
 
-  const { selectedBranch, tablesForSelectedFloor } = useMemo(() => {
+  const { selectedBranch, selectedFloor, tablesForSelectedFloor } = useMemo(() => {
     const branch = settings.branches.find(b => b.id === selectedBranchId);
-    if (!branch) return { selectedBranch: null, tablesForSelectedFloor: [] };
+    const floor = settings.floors.find(f => f.id === selectedFloorId);
+    if (!branch) return { selectedBranch: null, selectedFloor: null, tablesForSelectedFloor: [] };
 
     const tables = settings.tables.filter(t => t.floorId === selectedFloorId);
     
-    return { selectedBranch: branch, tablesForSelectedFloor: tables };
-  }, [selectedBranchId, selectedFloorId, settings.tables, settings.branches]);
+    return { selectedBranch: branch, selectedFloor: floor, tablesForSelectedFloor: tables };
+  }, [selectedBranchId, selectedFloorId, settings.tables, settings.branches, settings.floors]);
+
+  const exportAllAs = useCallback(async (format: 'pdf' | 'png') => {
+    if (!selectedBranch || !selectedFloor || tablesForSelectedFloor.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Export Failed',
+        description: 'Please select a floor with tables to export.',
+      });
+      return;
+    }
+    
+    toast({
+        title: 'Export in Progress...',
+        description: `Generating ${format.toUpperCase()} for ${tablesForSelectedFloor.length} tables. Please wait.`,
+    });
+
+    const html2canvas = await loadHtml2Canvas();
+    if (!html2canvas) {
+        toast({ variant: 'destructive', title: 'Export Failed', description: 'Could not load rendering library.' });
+        return;
+    }
+
+    const elementsToCapture = tablesForSelectedFloor.map(table => document.getElementById(`table-${table.id}`));
+
+    if (format === 'pdf') {
+        const pdf = new jsPDF('p', 'px');
+        let isFirstPage = true;
+
+        for (const element of elementsToCapture) {
+            if (element) {
+                const canvas = await html2canvas(element, { scale: 3, useCORS: true, backgroundColor: 'white' });
+                const imgData = canvas.toDataURL('image/png');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const imgProps = pdf.getImageProperties(imgData);
+                const aspectRatio = imgProps.width / imgProps.height;
+                let imgWidth = pdfWidth - 20;
+                let imgHeight = imgWidth / aspectRatio;
+                 if (imgHeight > pdfHeight - 20) {
+                    imgHeight = pdfHeight - 20;
+                    imgWidth = imgHeight * aspectRatio;
+                }
+
+                if (!isFirstPage) {
+                    pdf.addPage();
+                }
+                pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+                isFirstPage = false;
+            }
+        }
+        pdf.save(`${selectedBranch.name}-${selectedFloor.name}-QRCodes.pdf`.toLowerCase().replace(/\s/g, '-'));
+
+    } else if (format === 'png') {
+        // Create a temporary container to hold all the QR cards for a single screenshot
+        const container = document.createElement('div');
+        container.className = "columns-1 md:columns-2 xl:columns-3 gap-8 p-4 bg-background";
+        
+        elementsToCapture.forEach(el => {
+            if (el) container.appendChild(el.cloneNode(true));
+        });
+
+        document.body.appendChild(container);
+
+        const canvas = await html2canvas(container, { scale: 3, useCORS: true });
+        const link = document.createElement('a');
+        link.download = `${selectedBranch.name}-${selectedFloor.name}-QRCodes.png`.toLowerCase().replace(/\s/g, '-');
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        document.body.removeChild(container);
+    }
+    toast({
+        title: 'Export Complete!',
+        description: `Your QR codes have been downloaded.`,
+    });
+
+  }, [tablesForSelectedFloor, selectedBranch, selectedFloor]);
 
 
   if (isLoading || !origin) {
@@ -227,20 +307,30 @@ export default function QRCodesPage() {
                     <CardDescription>Select a floor to view and print the QR codes for each table.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className="print-hidden">
-                        <Label htmlFor="floor-select">Select Floor</Label>
-                        <Select value={selectedFloorId} onValueChange={setSelectedFloorId}>
-                            <SelectTrigger id="floor-select" className="w-full md:w-[300px]">
-                            <SelectValue placeholder="Select a floor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                            {settings.floors.map(floor => (
-                                <SelectItem key={floor.id} value={floor.id}>
-                                {floor.name}
-                                </SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
+                    <div className="print-hidden flex flex-wrap gap-4 items-end">
+                        <div className="grid gap-1.5">
+                            <Label htmlFor="floor-select">Select Floor</Label>
+                            <Select value={selectedFloorId} onValueChange={setSelectedFloorId}>
+                                <SelectTrigger id="floor-select" className="w-full md:w-[300px]">
+                                <SelectValue placeholder="Select a floor" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                {settings.floors.map(floor => (
+                                    <SelectItem key={floor.id} value={floor.id}>
+                                    {floor.name}
+                                    </SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex gap-2">
+                             <Button variant="secondary" onClick={() => exportAllAs('png')} disabled={tablesForSelectedFloor.length === 0}>
+                                <FileImage className="mr-2 h-4 w-4" /> Export All as PNG
+                            </Button>
+                            <Button variant="secondary" onClick={() => exportAllAs('pdf')} disabled={tablesForSelectedFloor.length === 0}>
+                                <File className="mr-2 h-4 w-4" /> Export All as PDF
+                            </Button>
+                        </div>
                     </div>
 
                     <div className="columns-1 md:columns-2 xl:columns-3 gap-8 printable-grid">
@@ -270,3 +360,4 @@ export default function QRCodesPage() {
     </div>
   );
 }
+
