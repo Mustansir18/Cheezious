@@ -22,11 +22,11 @@ export default function OrderStatusPage() {
   const { settings, isLoading: isSettingsLoading } = useSettings();
   const printTriggered = useRef(false);
   const idleTimer = useRef<NodeJS.Timeout>();
-  
+
   const orderNumberFromUrl = searchParams.get('orderNumber');
-  
+
   const resetToHome = useCallback(() => {
-    sessionStorage.removeItem("placedOrder");
+    sessionStorage.removeItem("placedOrder"); // Clear this to prevent re-triggering logic
     router.push("/");
   }, [router]);
 
@@ -36,22 +36,22 @@ export default function OrderStatusPage() {
     }
     idleTimer.current = setTimeout(resetToHome, IDLE_TIMEOUT_SECONDS * 1000);
   },[resetToHome]);
-
-  const [hasPlacedOrder, setHasPlacedOrder] = useState(false);
+  
+  const [justPlacedOrder, setJustPlacedOrder] = useState(false);
 
   useEffect(() => {
       setIsClient(true);
-      try {
-        const storedOrder = sessionStorage.getItem("placedOrder");
-        if (storedOrder) {
-          const parsedOrder = JSON.parse(storedOrder);
-          // We only care if we just came from checkout, which this flag indicates.
-          if (parsedOrder.orderNumber === orderNumberFromUrl) {
-            setHasPlacedOrder(true);
+      // Check if we just arrived from the checkout page
+      const storedOrderInfo = sessionStorage.getItem("placedOrder");
+      if (storedOrderInfo) {
+        try {
+          const parsed = JSON.parse(storedOrderInfo);
+          if (parsed.orderNumber === orderNumberFromUrl) {
+            setJustPlacedOrder(true);
           }
+        } catch (e) {
+          console.error("Could not parse placedOrder from session storage", e);
         }
-      } catch (error) {
-        console.error("Could not check session storage for placed order", error);
       }
   }, [orderNumberFromUrl]);
 
@@ -72,7 +72,7 @@ export default function OrderStatusPage() {
   }, [isClient, order]);
 
   const handlePrint = useCallback(() => {
-    resetIdleTimer(); // Reset timer on interaction
+    resetIdleTimer();
     if (!order) return;
     const printableArea = document.getElementById(`printable-receipt-${order.id}`);
     if (!printableArea) return;
@@ -94,12 +94,14 @@ export default function OrderStatusPage() {
   }, [order, resetIdleTimer]);
   
   useEffect(() => {
-    // Auto-print only if we just placed an order (hasPlacedOrder is true)
-    if (!isLoading && order && settings.autoPrintReceipts && !printTriggered.current && hasPlacedOrder) {
+    if (!isLoading && order && settings.autoPrintReceipts && !printTriggered.current && justPlacedOrder) {
         printTriggered.current = true;
         handlePrint();
+        // Clear the flag from session storage after printing
+        sessionStorage.removeItem("placedOrder");
     }
-  }, [isLoading, order, settings.autoPrintReceipts, handlePrint, hasPlacedOrder]);
+  }, [isLoading, order, settings.autoPrintReceipts, handlePrint, justPlacedOrder]);
+
 
   useEffect(() => {
     if (status === 'Ready') {
@@ -119,7 +121,7 @@ export default function OrderStatusPage() {
   
   useEffect(() => {
       // Only set up idle timer if we came from checkout
-      if(!hasPlacedOrder) return;
+      if(!justPlacedOrder) return;
 
       resetIdleTimer();
       const events: (keyof WindowEventMap)[] = ['mousemove', 'mousedown', 'keypress', 'touchstart'];
@@ -131,7 +133,7 @@ export default function OrderStatusPage() {
           }
           events.forEach(event => window.removeEventListener(event, resetIdleTimer));
       };
-  }, [resetIdleTimer, hasPlacedOrder]);
+  }, [resetIdleTimer, justPlacedOrder]);
 
   if (!isClient || isLoading) {
     return (
@@ -157,6 +159,9 @@ export default function OrderStatusPage() {
 
   const isOrderActive = status === 'Pending' || status === 'Preparing';
   const isOrderReady = status === 'Ready';
+  
+  const branchName = settings.branches.find(b => b.id === order.branchId)?.name || order.branchId;
+  const tableName = settings.tables.find(t => t.id === order.tableId)?.name;
 
   return (
     <div className="container mx-auto flex min-h-screen items-center justify-center p-4">
@@ -192,8 +197,8 @@ export default function OrderStatusPage() {
           
           <div className="mt-6 text-left border rounded-lg p-4 bg-muted/20">
             <h3 className="font-headline font-semibold mb-2">Order Summary</h3>
-            <p><strong>Branch:</strong> {settings.branches.find(b => b.id === order.branchId)?.name || order.branchId}</p>
-            {order.tableId && <p><strong>Table:</strong> {settings.tables.find(t => t.id === order.tableId)?.name || order.tableId}</p>}
+            <p><strong>Branch:</strong> {branchName}</p>
+            {tableName && <p><strong>Table:</strong> {tableName}</p>}
             <p><strong>Total:</strong> <span className="font-bold">RS {order.totalAmount.toFixed(2)}</span></p>
           </div>
         </CardContent>
