@@ -24,10 +24,12 @@ import { CheeziousLogo } from '@/components/icons/CheeziousLogo';
 import { useAuth } from '@/context/AuthContext';
 import { AdminRouteGuard } from '@/components/auth/AdminRouteGuard';
 import { usePathname } from 'next/navigation';
+import { useSettings } from '@/context/SettingsContext';
 
 
 function AdminSidebar() {
   const { user, logout } = useAuth();
+  const { settings } = useSettings();
   const pathname = usePathname();
 
   const navLinks = [
@@ -50,7 +52,7 @@ function AdminSidebar() {
           className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
         >
           <CheeziousLogo className="h-5 w-5 transition-all group-hover:scale-110" />
-          <span className="sr-only">Cheezious</span>
+          <span className="sr-only">{settings.companyName}</span>
         </Link>
         <TooltipProvider>
             {visibleLinks.map(link => (

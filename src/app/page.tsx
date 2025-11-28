@@ -19,22 +19,24 @@ import { Loader, QrCode } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
 
 export default function Home() {
-  const { deals, isLoading } = useDeals();
+  const { deals, isLoading: isDealsLoading } = useDeals();
   const { settings, isLoading: isSettingsLoading } = useSettings();
   const defaultBranch = settings.branches.find(b => b.id === 'j3-johar-town-lahore');
+  
+  const isLoading = isDealsLoading || isSettingsLoading;
 
   return (
     <main className="flex min-h-screen flex-col">
       <div className="container mx-auto flex flex-col items-center justify-center p-4 text-center flex-grow">
         <CheeziousLogo className="h-24 w-auto text-primary" />
         <h1 className="font-headline text-4xl font-bold tracking-tight text-primary md:text-5xl mt-4">
-          Welcome to {defaultBranch?.name || 'Cheezious'}
+          Welcome to {settings.companyName}
         </h1>
         <p className="max-w-xl text-lg text-muted-foreground mt-2">
           Your seamless digital dining experience starts here.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 mt-6">
-            <Button asChild size="lg">
+            <Button asChild size="lg" disabled={!defaultBranch}>
               <Link href={`/branch/${defaultBranch?.id || ''}`}>Start Your Order</Link>
             </Button>
             <Button asChild size="lg" variant="outline">

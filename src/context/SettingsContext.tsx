@@ -21,6 +21,8 @@ interface Settings {
     branches: BranchSetting[];
     businessDayStart: string;
     businessDayEnd: string;
+    companyName: string;
+    logoUrl: string;
 }
 
 interface SettingsContextType {
@@ -36,6 +38,7 @@ interface SettingsContextType {
   updateBranch: (branchId: string, newName: string) => void;
   toggleService: (branchId: string, service: 'dineInEnabled' | 'takeAwayEnabled', enabled: boolean) => void;
   updateBusinessDayHours: (start: string, end: string) => void;
+  updateBranding: (name: string, logoUrl: string) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -71,6 +74,8 @@ const initialSettings: Settings = {
     branches: enhancedInitialBranches,
     businessDayStart: '11:00',
     businessDayEnd: '04:00',
+    companyName: 'Cheezious',
+    logoUrl: 'https://cheezious.com/images/logo.png'
 };
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
@@ -100,6 +105,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             branches: branches,
             businessDayStart: parsed.businessDayStart || initialSettings.businessDayStart,
             businessDayEnd: parsed.businessDayEnd || initialSettings.businessDayEnd,
+            companyName: parsed.companyName || initialSettings.companyName,
+            logoUrl: parsed.logoUrl || initialSettings.logoUrl,
         });
       } else {
         setSettings(initialSettings);
@@ -179,6 +186,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     setSettings(s => ({...s, businessDayStart: start, businessDayEnd: end }));
   }, []);
 
+  const updateBranding = useCallback((name: string, logoUrl: string) => {
+    setSettings(s => ({ ...s, companyName: name, logoUrl: logoUrl }));
+  }, []);
+
   return (
     <SettingsContext.Provider
       value={{
@@ -194,6 +205,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         updateBranch,
         toggleService,
         updateBusinessDayHours,
+        updateBranding,
       }}
     >
       {children}
@@ -208,5 +220,3 @@ export const useSettings = () => {
   }
   return context;
 };
-
-    

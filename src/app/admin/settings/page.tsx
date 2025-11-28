@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useSettings } from "@/context/SettingsContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -24,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 
 export default function AdminSettingsPage() {
-    const { settings, addFloor, deleteFloor, addTable, deleteTable, addPaymentMethod, deletePaymentMethod, toggleAutoPrint, updateBranch, toggleService, updateBusinessDayHours } = useSettings();
+    const { settings, addFloor, deleteFloor, addTable, deleteTable, addPaymentMethod, deletePaymentMethod, toggleAutoPrint, updateBranch, toggleService, updateBusinessDayHours, updateBranding } = useSettings();
     const { user } = useAuth();
 
     const [newFloorName, setNewFloorName] = useState("");
@@ -37,10 +38,17 @@ export default function AdminSettingsPage() {
     const [businessDayStart, setBusinessDayStart] = useState(settings.businessDayStart);
     const [businessDayEnd, setBusinessDayEnd] = useState(settings.businessDayEnd);
 
+    const [companyName, setCompanyName] = useState(settings.companyName);
+    const [logoUrl, setLogoUrl] = useState(settings.logoUrl);
+    const [logoPreview, setLogoPreview] = useState(settings.logoUrl);
+
     useEffect(() => {
         setBusinessDayStart(settings.businessDayStart);
         setBusinessDayEnd(settings.businessDayEnd);
-    }, [settings.businessDayStart, settings.businessDayEnd]);
+        setCompanyName(settings.companyName);
+        setLogoUrl(settings.logoUrl);
+        setLogoPreview(settings.logoUrl);
+    }, [settings.businessDayStart, settings.businessDayEnd, settings.companyName, settings.logoUrl]);
 
 
     const handleAddFloor = () => {
@@ -76,6 +84,23 @@ export default function AdminSettingsPage() {
         updateBusinessDayHours(businessDayStart, businessDayEnd);
     };
 
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const newLogoUrl = reader.result as string;
+                setLogoUrl(newLogoUrl);
+                setLogoPreview(newLogoUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSaveBranding = () => {
+        updateBranding(companyName, logoUrl);
+    };
+
     const defaultPaymentMethodIds = ['cash', 'card'];
 
     // If user is a branch admin, filter to only show their branch
@@ -89,6 +114,48 @@ export default function AdminSettingsPage() {
                 <h1 className="font-headline text-4xl font-bold">Admin Settings</h1>
                 <p className="text-muted-foreground">Manage restaurant layout, payments, and branch settings.</p>
             </header>
+            
+            {/* Branding Settings */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Branding</CardTitle>
+                    <CardDescription>Customize your company name and logo.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="company-name">Company Name</Label>
+                        <Input
+                            id="company-name"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                        />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="logo-upload">Company Logo</Label>
+                        <Input 
+                            id="logo-upload" 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handleLogoChange}
+                            className="file:text-foreground"
+                        />
+                        {logoPreview && (
+                            <div className="mt-4">
+                                <p className="text-sm font-medium mb-2">Logo Preview:</p>
+                                <Image 
+                                    src={logoPreview} 
+                                    alt="Logo preview" 
+                                    width={100} 
+                                    height={100} 
+                                    className="rounded-md object-contain border p-2" 
+                                    unoptimized
+                                />
+                            </div>
+                        )}
+                    </div>
+                    <Button onClick={handleSaveBranding}>Save Branding</Button>
+                </CardContent>
+            </Card>
 
             {/* Branch Management */}
             <Card>
@@ -351,5 +418,3 @@ export default function AdminSettingsPage() {
         </div>
     );
 }
-
-    

@@ -8,19 +8,20 @@ import { CheeziousLogo } from "@/components/icons/CheeziousLogo";
 import { useCart } from "@/context/CartContext";
 import { CartSheet } from "@/components/cart/CartSheet";
 import { Badge } from "@/components/ui/badge";
-import { branches } from "@/lib/data";
+import { useSettings } from "@/context/SettingsContext";
 
 export default function Header({ branchId }: { branchId: string }) {
   const { cartCount } = useCart();
-  const branch = branches.find((b) => b.id === branchId);
+  const { settings } = useSettings();
+  const branch = settings.branches.find((b) => b.id === branchId);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <CheeziousLogo className="h-8 w-8 text-primary" />
+          <CheeziousLogo className="h-8 w-8" />
           <span className="hidden font-headline text-xl font-bold text-primary sm:inline-block">
-            Cheezious
+            {settings.companyName}
           </span>
         </Link>
         <div className="text-center">

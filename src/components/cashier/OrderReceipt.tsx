@@ -21,7 +21,7 @@ export function OrderReceipt({ order, qrCodeUrl }: OrderReceiptProps) {
         <div className="p-4 bg-white text-black font-mono text-xs w-[300px]">
             <div className="text-center mb-4">
                 <CheeziousLogo className="h-16 w-16 mx-auto text-black" />
-                <h2 className="font-bold text-sm mt-2">{branch?.name}</h2>
+                <h2 className="font-bold text-sm mt-2">{settings.companyName}</h2>
                 <p>{branch?.location}</p>
                 <p>--- Customer Receipt ---</p>
             </div>
@@ -105,7 +105,7 @@ export function OrderReceipt({ order, qrCodeUrl }: OrderReceiptProps) {
             )}
             
             <p className="text-center mt-4">Thank you for your visit!</p>
-            <p className="text-center">Have a Cheezious Day!</p>
+            <p className="text-center">Have a {settings.companyName} Day!</p>
         </div>
     );
 }
