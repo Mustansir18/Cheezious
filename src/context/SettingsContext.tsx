@@ -8,7 +8,6 @@ import { branches as initialBranchesData } from '@/lib/data';
 interface BranchSetting {
     id: string;
     name: string;
-    location: string;
     dineInEnabled: boolean;
     takeAwayEnabled: boolean;
 }
@@ -40,7 +39,8 @@ interface SettingsContextType {
   toggleService: (branchId: string, service: 'dineInEnabled' | 'takeAwayEnabled', enabled: boolean) => void;
   updateBusinessDayHours: (start: string, end: string) => void;
   updateBranding: (name: string, logoUrl: string) => void;
-  addBranch: (name: string, location: string) => void;
+  addBranch: (name: string) => void;
+  deleteBranch: (branchId: string) => void;
   setDefaultBranch: (branchId: string) => void;
 }
 
@@ -64,7 +64,8 @@ const defaultTables: Table[] = Array.from({ length: 10 }, (_, i) => ({
 }));
 
 const enhancedInitialBranches: BranchSetting[] = initialBranchesData.map(branch => ({
-    ...branch,
+    id: branch.id,
+    name: branch.name,
     dineInEnabled: true,
     takeAwayEnabled: true,
 }));
@@ -96,7 +97,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         const customMethods = parsed.paymentMethods?.filter((pm: PaymentMethod) => !defaultPaymentMethods.some(dpm => dpm.id === pm.id)) || [];
         
         const branches = parsed.branches?.map((b: any) => ({
-            ...b,
+            id: b.id,
+            name: b.name,
             dineInEnabled: b.dineInEnabled !== false, // default to true if not set
             takeAwayEnabled: b.takeAwayEnabled !== false, // default to true if not set
         })) || enhancedInitialBranches;
@@ -195,15 +197,26 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     setSettings(s => ({ ...s, companyName: name, logoUrl: logoUrl }));
   }, []);
 
-  const addBranch = useCallback((name: string, location: string) => {
+  const addBranch = useCallback((name: string) => {
     const newBranch: BranchSetting = {
       id: crypto.randomUUID(),
       name,
-      location,
       dineInEnabled: true,
       takeAwayEnabled: true,
     };
     setSettings(s => ({ ...s, branches: [...s.branches, newBranch] }));
+  }, []);
+
+  const deleteBranch = useCallback((branchId: string) => {
+    setSettings(s => {
+        const newBranches = s.branches.filter(b => b.id !== branchId);
+        const newDefaultBranchId = s.defaultBranchId === branchId ? (newBranches.length > 0 ? newBranches[0].id : null) : s.defaultBranchId;
+        return {
+            ...s,
+            branches: newBranches,
+            defaultBranchId: newDefaultBranchId,
+        };
+    });
   }, []);
 
   const setDefaultBranch = useCallback((branchId: string) => {
@@ -228,6 +241,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         updateBusinessDayHours,
         updateBranding,
         addBranch,
+        deleteBranch,
         setDefaultBranch,
       }}
     >
@@ -243,5 +257,3 @@ export const useSettings = () => {
   }
   return context;
 };
-
-    

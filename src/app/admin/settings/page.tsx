@@ -23,9 +23,20 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function AdminSettingsPage() {
-    const { settings, addFloor, deleteFloor, addTable, deleteTable, addPaymentMethod, deletePaymentMethod, toggleAutoPrint, updateBranch, toggleService, updateBusinessDayHours, updateBranding, addBranch, setDefaultBranch } = useSettings();
+    const { settings, addFloor, deleteFloor, addTable, deleteTable, addPaymentMethod, deletePaymentMethod, toggleAutoPrint, updateBranch, toggleService, updateBusinessDayHours, updateBranding, addBranch, deleteBranch, setDefaultBranch } = useSettings();
     const { user } = useAuth();
 
     const [newFloorName, setNewFloorName] = useState("");
@@ -43,7 +54,6 @@ export default function AdminSettingsPage() {
     const [logoPreview, setLogoPreview] = useState(settings.logoUrl);
 
     const [newBranchName, setNewBranchName] = useState('');
-    const [newBranchLocation, setNewBranchLocation] = useState('');
 
     useEffect(() => {
         setBusinessDayStart(settings.businessDayStart);
@@ -105,10 +115,9 @@ export default function AdminSettingsPage() {
     };
 
     const handleAddBranch = () => {
-        if (newBranchName.trim() && newBranchLocation.trim()) {
-            addBranch(newBranchName.trim(), newBranchLocation.trim());
+        if (newBranchName.trim()) {
+            addBranch(newBranchName.trim());
             setNewBranchName('');
-            setNewBranchLocation('');
         }
     };
 
@@ -178,16 +187,11 @@ export default function AdminSettingsPage() {
                      { user?.role === 'root' && (
                         <div className="mb-6 p-4 border rounded-lg space-y-4">
                             <h4 className="font-semibold">Add New Branch</h4>
-                             <div className="grid md:grid-cols-3 gap-2">
+                             <div className="grid md:grid-cols-2 gap-2">
                                 <Input
                                     placeholder="New branch name"
                                     value={newBranchName}
                                     onChange={(e) => setNewBranchName(e.target.value)}
-                                />
-                                <Input
-                                    placeholder="Branch location (e.g., City, Area)"
-                                    value={newBranchLocation}
-                                    onChange={(e) => setNewBranchLocation(e.target.value)}
                                 />
                                 <Button onClick={handleAddBranch}>Add Branch</Button>
                             </div>
@@ -200,7 +204,7 @@ export default function AdminSettingsPage() {
                                 <TableHead>Branch Name</TableHead>
                                 <TableHead>Dine-In</TableHead>
                                 <TableHead>Take Away</TableHead>
-                                <TableHead className="text-right w-[80px]">Actions</TableHead>
+                                <TableHead className="text-right w-[120px]">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -225,6 +229,25 @@ export default function AdminSettingsPage() {
                                         <Button variant="ghost" size="icon" onClick={() => { setEditingBranch(branch); setEditingBranchName(branch.name); }}>
                                             <Edit className="h-4 w-4" />
                                         </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This action cannot be undone. This will permanently delete the branch and any associated user access.
+                                                </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => deleteBranch(branch.id)}>Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -244,7 +267,7 @@ export default function AdminSettingsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                             <div className="space-y-2">
                                 <Label htmlFor="default-branch-select">Default Branch for Homepage</Label>
-                                <Select value={settings.defaultBranchId} onValueChange={setDefaultBranch}>
+                                <Select value={settings.defaultBranchId || ''} onValueChange={setDefaultBranch}>
                                     <SelectTrigger id="default-branch-select">
                                         <SelectValue placeholder="Select a default branch" />
                                     </SelectTrigger>
@@ -477,5 +500,3 @@ export default function AdminSettingsPage() {
         </div>
     );
 }
-
-    
