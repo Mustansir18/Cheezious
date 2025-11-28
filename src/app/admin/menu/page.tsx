@@ -3,8 +3,8 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { useMenu } from '@/context/MenuContext';
-import { Button } from '@/components/ui/button';
+import { useMenu } from '../../../context/MenuContext';
+import { Button } from '../../../components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -13,15 +13,15 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+} from '../../../components/ui/dialog';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { Textarea } from '../../../components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table';
 import { Trash2, Edit, PlusCircle } from 'lucide-react';
-import type { MenuCategory, MenuItem } from '@/lib/types';
+import type { MenuCategory, MenuItem } from '../../../lib/types';
 
 // Category Form Component
 function CategoryForm({

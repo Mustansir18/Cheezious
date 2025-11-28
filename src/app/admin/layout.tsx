@@ -20,12 +20,12 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/AuthContext';
-import { AdminRouteGuard } from '@/components/auth/AdminRouteGuard';
+} from '../../components/ui/tooltip';
+import { Button } from '../../components/ui/button';
+import { useAuth } from '../../context/AuthContext';
+import { AdminRouteGuard } from '../../components/auth/AdminRouteGuard';
 import { usePathname } from 'next/navigation';
-import { useSettings } from '@/context/SettingsContext';
+import { useSettings } from '../../context/SettingsContext';
 
 
 function AdminSidebar() {

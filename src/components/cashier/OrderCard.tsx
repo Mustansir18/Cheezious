@@ -2,7 +2,7 @@
 
 "use client";
 
-import type { Order, OrderItem, OrderStatus } from "@/lib/types";
+import type { Order, OrderItem, OrderStatus } from "../../lib/types";
 import {
   Card,
   CardContent,
@@ -10,16 +10,16 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+} from "../ui/card";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+import { Separator } from "../ui/separator";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "../ui/skeleton";
 import { ScrollArea } from "../ui/scroll-area";
 import { Utensils, ShoppingBag, Check, CheckCircle, CookingPot, Loader, CreditCard, Printer, Info, User } from "lucide-react";
 import { useMemo, useRef, useState, useEffect } from "react";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettings } from "../../context/SettingsContext";
 import { OrderReceipt } from "./OrderReceipt";
 
 const statusConfig = {

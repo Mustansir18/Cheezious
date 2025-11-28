@@ -10,11 +10,11 @@ import {
   SheetTitle,
   SheetTrigger,
   SheetFooter,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { useCart } from "@/context/CartContext";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+} from "../ui/sheet";
+import { Button } from "../ui/button";
+import { useCart } from "../../context/CartContext";
+import { ScrollArea } from "../ui/scroll-area";
+import { Separator } from "../ui/separator";
 import { UpdateQuantity } from "./UpdateQuantity";
 
 const FALLBACK_IMAGE_URL = "https://picsum.photos/seed/placeholder/400/300";

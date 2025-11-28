@@ -2,26 +2,26 @@
 
 "use client";
 
-import { useOrders } from "@/context/OrderContext";
+import { useOrders } from "../../../context/OrderContext";
 import { useMemo, useState, useEffect } from "react";
-import type { Order } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import type { Order } from "../../../lib/types";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
 import { Calendar as CalendarIcon, ShoppingCart, DollarSign, Utensils, Loader, Printer, CreditCard, ShoppingBag, FileDown, Clock } from "lucide-react";
-import { HourlySalesReport } from "@/components/reporting/HourlySalesReport";
-import { TopSellingItems } from "@/components/reporting/TopSellingItems";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { HourlySalesReport } from "../../../components/reporting/HourlySalesReport";
+import { TopSellingItems } from "../../../components/reporting/TopSellingItems";
+import { Button } from "../../../components/ui/button";
+import { Calendar } from "../../../components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "../../../components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../../components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table";
+import { ScrollArea } from "../../../components/ui/scroll-area";
 import { format as formatDate, addDays, set } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn } from "../../../lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from 'xlsx';
-import { useSettings } from "@/context/SettingsContext";
+import { useSettings } from "../../../context/SettingsContext";
 
 export interface ItemSale {
   name: string;

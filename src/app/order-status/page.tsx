@@ -4,13 +4,13 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as Tone from "tone";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "../components/ui/card";
 import { CheckCircle, Loader, Utensils, Printer } from "lucide-react";
-import type { Order } from "@/lib/types";
-import { useOrders } from "@/context/OrderContext";
-import { useSettings } from "@/context/SettingsContext";
-import { OrderReceipt } from "@/components/cashier/OrderReceipt";
+import type { Order } from "../lib/types";
+import { useOrders } from "../context/OrderContext";
+import { useSettings } from "../context/SettingsContext";
+import { OrderReceipt } from "../components/cashier/OrderReceipt";
 
 const IDLE_TIMEOUT_SECONDS = 30; // 30 seconds
 

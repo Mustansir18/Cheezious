@@ -3,11 +3,11 @@
 
 import Link from "next/link";
 import { ShoppingCart, Pizza } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useCart } from "@/context/CartContext";
-import { CartSheet } from "@/components/cart/CartSheet";
-import { Badge } from "@/components/ui/badge";
-import { useSettings } from "@/context/SettingsContext";
+import { Button } from "../ui/button";
+import { useCart } from "../../context/CartContext";
+import { CartSheet } from "../cart/CartSheet";
+import { Badge } from "../ui/badge";
+import { useSettings } from "../../context/SettingsContext";
 
 export default function Header({ branchId }: { branchId: string }) {
   const { cartCount } = useCart();

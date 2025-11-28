@@ -2,11 +2,11 @@
 "use client";
 
 import Image from "next/image";
-import type { MenuItem } from "@/lib/types";
-import { useCart } from "@/context/CartContext";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { UpdateQuantity } from "@/components/cart/UpdateQuantity";
+import type { MenuItem } from "../../lib/types";
+import { useCart } from "../../context/CartContext";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "../ui/card";
+import { UpdateQuantity } from "../cart/UpdateQuantity";
 import { PlusCircle } from "lucide-react";
 
 const FALLBACK_IMAGE_URL = "https://picsum.photos/seed/placeholder/400/300";

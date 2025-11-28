@@ -1,14 +1,14 @@
 
 "use client";
-import type { Order } from "@/lib/types";
-import { OrderCard } from "@/components/cashier/OrderCard";
+import type { Order } from "../../../lib/types";
+import { OrderCard } from "../../../components/cashier/OrderCard";
 import { Clock, CookingPot, CheckCircle, Loader, Info } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { useOrders } from "@/context/OrderContext";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { OrderReceipt } from "@/components/cashier/OrderReceipt";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/AuthContext";
+import { Card, CardContent } from "../../../components/ui/card";
+import { useOrders } from "../../../context/OrderContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../../../components/ui/dialog";
+import { OrderReceipt } from "../../../components/cashier/OrderReceipt";
+import { Button } from "../../../components/ui/button";
+import { useAuth } from "../../../context/AuthContext";
 import { useMemo, useState, useEffect } from "react";
 
 function OrderInfoModal({ order }: { order: Order }) {

@@ -1,7 +1,8 @@
+
 "use client";
 
-import { useCart } from "@/context/CartContext";
-import { Button } from "@/components/ui/button";
+import { useCart } from "../../context/CartContext";
+import { Button } from "../ui/button";
 import { Minus, Plus, Trash2 } from "lucide-react";
 
 export function UpdateQuantity({ itemId, quantity }: { itemId: string, quantity: number }) {

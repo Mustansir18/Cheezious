@@ -3,8 +3,8 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { useDeals } from '@/context/DealsContext';
-import { Button } from '@/components/ui/button';
+import { useDeals } from '../../../context/DealsContext';
+import { Button } from '../../../components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -13,14 +13,14 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+} from '../../../components/ui/dialog';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { Textarea } from '../../../components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table';
 import { Trash2, Edit, PlusCircle, Loader } from 'lucide-react';
-import type { Deal } from '@/lib/types';
+import type { Deal } from '../../../lib/types';
 
 
 function DealForm({

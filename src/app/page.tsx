@@ -12,10 +12,10 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
-import { useDeals } from "@/context/DealsContext";
+import { useDeals } from "../context/DealsContext";
 import Autoplay from "embla-carousel-autoplay";
 import { Loader, QrCode, Pizza } from "lucide-react";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettings } from "../context/SettingsContext";
 
 export default function Home() {
   const { deals, isLoading: isDealsLoading } = useDeals();

@@ -4,16 +4,16 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useQRCode } from 'next-qrcode';
-import { useSettings } from '@/context/SettingsContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSettings } from '../../../context/SettingsContext';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
+import { Label } from '../../../components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Utensils, ShoppingBag, Printer, Download, Image as ImageIcon, File as FileIcon, FileImage } from 'lucide-react';
-import type { Table, Floor } from '@/lib/types';
+import type { Table, Floor } from '../../../lib/types';
 import jsPDF from "jspdf";
-import { toast } from '@/hooks/use-toast';
+import { toast } from '../../../hooks/use-toast';
 
 
 const loadHtml2Canvas = () => {
