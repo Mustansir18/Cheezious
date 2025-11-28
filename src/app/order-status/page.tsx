@@ -11,7 +11,7 @@ import type { Order, PlacedOrder } from "@/lib/types";
 import { useOrders } from "@/context/OrderContext";
 import { useSettings } from "@/context/SettingsContext";
 import { OrderReceipt } from "@/components/cashier/OrderReceipt";
-import useQRCode from 'next-qrcode';
+import { useQRCode } from 'next-qrcode';
 
 const IDLE_TIMEOUT_SECONDS = 30; // 30 seconds
 

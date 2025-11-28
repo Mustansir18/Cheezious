@@ -4,7 +4,7 @@
 import { Order } from "@/lib/types";
 import { useSettings } from "@/context/SettingsContext";
 import { CheeziousLogo } from "../icons/CheeziousLogo";
-import useQRCode from 'next-qrcode';
+import { useQRCode } from 'next-qrcode';
 
 interface OrderReceiptProps {
     order: Order;
