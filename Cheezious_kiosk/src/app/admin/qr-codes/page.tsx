@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Utensils, ShoppingBag, Printer, Download, Image as ImageIcon, File, FileImage } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Utensils, ShoppingBag, Printer, Download, Image as ImageIcon, File as FileIcon, FileImage } from 'lucide-react';
 import type { Table, Floor } from '@/lib/types';
 import jsPDF from "jspdf";
 import { toast } from '@/hooks/use-toast';
@@ -45,22 +46,23 @@ interface QRCodeDisplayProps {
 
 function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchName, qrId }: QRCodeDisplayProps) {
   const { Canvas } = useQRCode();
-  const printRef = useRef<HTMLDivElement>(null);
 
   const captureCardAsCanvas = useCallback(async () => {
     const html2canvas = await loadHtml2Canvas();
-    if (!printRef.current || !html2canvas) {
+    const elementToCapture = document.getElementById(qrId);
+
+    if (!elementToCapture || !html2canvas) {
       console.error("Card element not found or html2canvas not loaded.");
       return null;
     }
     
-    const canvas = await html2canvas(printRef.current, {
+    const canvas = await html2canvas(elementToCapture, {
         scale: 5, 
         useCORS: true,
         backgroundColor: 'white'
     });
     return canvas;
-  }, []);
+  }, [qrId]);
 
 
   const downloadAsPng = useCallback(async () => {
@@ -89,7 +91,7 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
 
   return (
     <div className="flex flex-col items-center p-6 border-2 border-dashed rounded-xl break-inside-avoid bg-card">
-        <div ref={printRef} id={qrId} className="text-center w-full bg-card p-8 rounded-lg">
+        <div id={qrId} className="text-center w-full bg-card p-8 rounded-lg">
             <h3 className="text-3xl font-bold font-headline text-center text-primary">{companyName}</h3>
             <p className="text-amber-800 text-center mb-6 text-lg font-semibold">{branchName}</p>
             
@@ -278,85 +280,91 @@ export default function QRCodesPage() {
       </Card>
       
       {selectedBranch && (
-          <div className="space-y-12">
-            {/* Take Away Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline text-2xl">Take Away Orders</CardTitle>
-                    <CardDescription>A general-purpose QR code for customers placing take away orders.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="max-w-sm mx-auto">
-                        <QRCodeDisplay
-                            title="Take Away"
-                            icon={ShoppingBag}
-                            url={takeAwayUrl}
-                            companyName={settings.companyName}
-                            branchName={selectedBranch.name}
-                            qrId="qr-card-take-away"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-            
-            {/* Dine-In Section */}
-            <Card>
-                 <CardHeader>
-                    <CardTitle className="font-headline text-2xl">Dine-In Orders</CardTitle>
-                    <CardDescription>Select a floor to view and print the QR codes for each table.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="print-hidden flex flex-wrap gap-4 items-end">
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="floor-select">Select Floor</Label>
-                            <Select value={selectedFloorId} onValueChange={setSelectedFloorId}>
-                                <SelectTrigger id="floor-select" className="w-full md:w-[300px]">
-                                <SelectValue placeholder="Select a floor" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                {settings.floors.map(floor => (
-                                    <SelectItem key={floor.id} value={floor.id}>
-                                    {floor.name}
-                                    </SelectItem>
-                                ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="flex gap-2">
-                             <Button variant="secondary" onClick={() => exportAllAs('png')} disabled={tablesForSelectedFloor.length === 0}>
-                                <FileImage className="mr-2 h-4 w-4" /> Export All as PNG
-                            </Button>
-                            <Button variant="secondary" onClick={() => exportAllAs('pdf')} disabled={tablesForSelectedFloor.length === 0}>
-                                <File className="mr-2 h-4 w-4" /> Export All as PDF
-                            </Button>
-                        </div>
-                    </div>
+        <Tabs defaultValue="dine-in" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+                <TabsTrigger value="dine-in" className="py-3 text-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Dine-In</TabsTrigger>
+                <TabsTrigger value="take-away" className="py-3 text-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Take Away</TabsTrigger>
+            </TabsList>
 
-                    <div className="columns-1 md:columns-2 xl:columns-3 gap-8 printable-grid">
-                        {tablesForSelectedFloor.map(table => {
-                            const floor = settings.floors.find(f => f.id === table.floorId);
-                            return (
-                                <QRCodeDisplay
-                                    key={table.id}
-                                    title="Dine-In"
-                                    subtitle={`${floor?.name || ''} - ${table.name}`}
-                                    icon={Utensils}
-                                    url={`${origin}/branch/${selectedBranchId}?mode=Dine-In&tableId=${table.id}&floorId=${table.floorId}`}
-                                    companyName={settings.companyName}
-                                    branchName={selectedBranch.name}
-                                    qrId={`qr-card-${table.id}`}
-                                />
-                            )
-                        })}
-                    </div>
-                    {tablesForSelectedFloor.length === 0 && (
-                        <p className="text-center text-muted-foreground py-8">No tables found for the selected floor. Add tables in the Admin Settings.</p>
-                    )}
-                </CardContent>
-            </Card>
-          </div>
+            <TabsContent value="take-away" className="mt-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl">Take Away Orders</CardTitle>
+                        <CardDescription>A general-purpose QR code for customers placing take away orders.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="max-w-sm mx-auto">
+                            <QRCodeDisplay
+                                title="Take Away"
+                                icon={ShoppingBag}
+                                url={takeAwayUrl}
+                                companyName={settings.companyName}
+                                branchName={selectedBranch.name}
+                                qrId="qr-card-take-away"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+
+            <TabsContent value="dine-in" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl">Dine-In Orders</CardTitle>
+                        <CardDescription>Select a floor to view and print the QR codes for each table.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="print-hidden flex flex-wrap gap-4 items-end">
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="floor-select">Select Floor</Label>
+                                <Select value={selectedFloorId} onValueChange={setSelectedFloorId}>
+                                    <SelectTrigger id="floor-select" className="w-full md:w-[300px]">
+                                    <SelectValue placeholder="Select a floor" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                    {settings.floors.map(floor => (
+                                        <SelectItem key={floor.id} value={floor.id}>
+                                        {floor.name}
+                                        </SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button variant="secondary" onClick={() => exportAllAs('png')} disabled={tablesForSelectedFloor.length === 0}>
+                                    <FileImage className="mr-2 h-4 w-4" /> Export All as PNG
+                                </Button>
+                                <Button variant="secondary" onClick={() => exportAllAs('pdf')} disabled={tablesForSelectedFloor.length === 0}>
+                                    <FileIcon className="mr-2 h-4 w-4" /> Export All as PDF
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="columns-1 md:columns-2 xl:columns-3 gap-8 printable-grid">
+                            {tablesForSelectedFloor.map(table => {
+                                const floor = settings.floors.find(f => f.id === table.floorId);
+                                return (
+                                    <QRCodeDisplay
+                                        key={table.id}
+                                        title="Dine-In"
+                                        subtitle={`${floor?.name || ''} - ${table.name}`}
+                                        icon={Utensils}
+                                        url={`${origin}/branch/${selectedBranchId}?mode=Dine-In&tableId=${table.id}&floorId=${table.floorId}`}
+                                        companyName={settings.companyName}
+                                        branchName={selectedBranch.name}
+                                        qrId={`qr-card-${table.id}`}
+                                    />
+                                )
+                            })}
+                        </div>
+                        {tablesForSelectedFloor.length === 0 && (
+                            <p className="text-center text-muted-foreground py-8">No tables found for the selected floor. Add tables in the Admin Settings.</p>
+                        )}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
       )}
     </div>
   );
 }
-
