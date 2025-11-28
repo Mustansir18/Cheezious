@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/context/SettingsContext";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader } from "lucide-react";
 
 const FALLBACK_IMAGE_URL = "https://picsum.photos/seed/placeholder/400/300";
 
@@ -27,6 +28,7 @@ export default function OrderConfirmationPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [paymentMethod, setPaymentMethod] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const taxRates: { [key: string]: number } = {
     'Cash': 0.16, // 16%
@@ -57,6 +59,7 @@ export default function OrderConfirmationPage() {
   }
   
   const handleConfirmOrder = async () => {
+    if (isProcessing) return;
     if (!branchId || !orderType) return;
     if (!paymentMethod) {
         toast({
@@ -66,67 +69,80 @@ export default function OrderConfirmationPage() {
         });
         return;
     }
-
-    const orderId = crypto.randomUUID();
-    const orderNumber = `${branchId.slice(0,3).toUpperCase()}-${Date.now().toString().slice(-6)}`;
-    const orderItems: OrderItem[] = items.map(item => ({
-        id: crypto.randomUUID(),
-        orderId: orderId,
-        menuItemId: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        itemPrice: item.price
-    }));
-
-    const newOrder: Order = {
-        id: orderId,
-        orderNumber,
-        branchId,
-        orderDate: new Date().toISOString(),
-        orderType,
-        status: "Pending",
-        totalAmount: grandTotal,
-        subtotal: cartTotal,
-        taxRate: taxRate,
-        taxAmount: taxAmount,
-        items: orderItems,
-        paymentMethod,
-        ...(orderType === 'Dine-In' && { floorId, tableId }),
-    };
     
-    // Asynchronously sync the order to the external system.
-    syncOrderToExternalSystem({
-        ...newOrder,
-        items: newOrder.items.map(item => ({
-            menuItemId: item.menuItemId,
+    setIsProcessing(true);
+
+    try {
+        const orderId = crypto.randomUUID();
+        const orderNumber = `${branchId.slice(0,3).toUpperCase()}-${Date.now().toString().slice(-6)}`;
+        const orderItems: OrderItem[] = items.map(item => ({
+            id: crypto.randomUUID(),
+            orderId: orderId,
+            menuItemId: item.id,
             name: item.name,
             quantity: item.quantity,
-            itemPrice: item.itemPrice
-        }))
-    }).then(result => {
-        if (!result.success) {
-            toast({
-                variant: "destructive",
-                title: "Sync Failed",
-                description: "Could not sync the order with the external system. Please check the logs.",
-            });
-        }
-    });
+            itemPrice: item.price
+        }));
 
-    addOrder(newOrder);
-    
-    const placedOrder: PlacedOrder = {
-        orderId: newOrder.id,
-        orderNumber: newOrder.orderNumber,
-        total: grandTotal,
-        branchName: branch!.name,
-        orderType,
-        ...(table && { tableName: table.name }),
-    };
+        const newOrder: Order = {
+            id: orderId,
+            orderNumber,
+            branchId,
+            orderDate: new Date().toISOString(),
+            orderType,
+            status: "Pending",
+            totalAmount: grandTotal,
+            subtotal: cartTotal,
+            taxRate: taxRate,
+            taxAmount: taxAmount,
+            items: orderItems,
+            paymentMethod,
+            ...(orderType === 'Dine-In' && { floorId, tableId }),
+        };
+        
+        // Asynchronously sync the order to the external system.
+        syncOrderToExternalSystem({
+            ...newOrder,
+            items: newOrder.items.map(item => ({
+                menuItemId: item.menuItemId,
+                name: item.name,
+                quantity: item.quantity,
+                itemPrice: item.itemPrice
+            }))
+        }).then(result => {
+            if (!result.success) {
+                toast({
+                    variant: "destructive",
+                    title: "Sync Failed",
+                    description: "Could not sync the order with the external system. Please check the logs.",
+                });
+            }
+        });
 
-    sessionStorage.setItem('placedOrder', JSON.stringify(placedOrder));
-    clearCart();
-    router.push("/order-status");
+        addOrder(newOrder);
+        
+        const placedOrder: PlacedOrder = {
+            orderId: newOrder.id,
+            orderNumber: newOrder.orderNumber,
+            total: grandTotal,
+            branchName: branch!.name,
+            orderType,
+            ...(table && { tableName: table.name }),
+        };
+
+        sessionStorage.setItem('placedOrder', JSON.stringify(placedOrder));
+        clearCart();
+        router.push("/order-status");
+
+    } catch (error) {
+        console.error("Failed to place order:", error);
+        toast({
+            variant: "destructive",
+            title: "Order Failed",
+            description: "An unexpected error occurred while placing your order.",
+        });
+        setIsProcessing(false);
+    }
   };
 
   return (
@@ -214,14 +230,13 @@ export default function OrderConfirmationPage() {
             onClick={handleConfirmOrder}
             className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90"
             size="lg"
-            disabled={items.length === 0}
+            disabled={items.length === 0 || isProcessing}
           >
-            Place Order
+            {isProcessing && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+            {isProcessing ? 'Placing Order...' : 'Place Order'}
           </Button>
         </CardFooter>
       </Card>
     </div>
   );
 }
-
-    
