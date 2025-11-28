@@ -18,7 +18,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "../ui/skeleton";
 import { ScrollArea } from "../ui/scroll-area";
 import { Utensils, ShoppingBag, Check, CheckCircle, CookingPot, Loader, CreditCard, Printer, Info, User } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useSettings } from "@/context/SettingsContext";
 import { OrderReceipt } from "./OrderReceipt";
 
@@ -40,10 +40,19 @@ interface OrderCardProps {
 export function OrderCard({ order, workflow = 'cashier', onUpdateStatus, children }: OrderCardProps) {
   const { settings } = useSettings();
   const receiptRef = useRef<HTMLDivElement>(null);
+  const [origin, setOrigin] = useState('');
   
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        setOrigin(window.location.origin);
+    }
+  }, []);
+
   const handleUpdateStatus = (newStatus: OrderStatus) => {
     onUpdateStatus(order.id, newStatus);
   };
+
+  const qrCodeUrl = origin ? `${origin}/order-status?orderNumber=${order.orderNumber}` : '';
 
   const handlePrint = () => {
     const printableArea = document.getElementById(`printable-receipt-${order.id}`);
@@ -177,7 +186,7 @@ export function OrderCard({ order, workflow = 'cashier', onUpdateStatus, childre
       </CardFooter>
       <div className="hidden">
         <div id={`printable-receipt-${order.id}`}>
-          <OrderReceipt order={order} />
+          <OrderReceipt order={order} qrCodeUrl={qrCodeUrl} />
         </div>
       </div>
     </Card>
