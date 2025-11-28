@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useQRCode } from 'next-qrcode';
 import { useSettings } from '@/context/SettingsContext';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -130,6 +130,7 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
 export default function QRCodesPage() {
   const { settings, isLoading } = useSettings();
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+  const [selectedFloorId, setSelectedFloorId] = useState<string>('');
   const [origin, setOrigin] = useState('');
 
   useEffect(() => {
@@ -139,41 +140,24 @@ export default function QRCodesPage() {
       if (settings.branches.length > 0) {
         setSelectedBranchId(settings.defaultBranchId || settings.branches[0].id);
       }
+      if (settings.floors.length > 0) {
+        setSelectedFloorId(settings.floors[0].id);
+      }
     }
-  }, [settings.branches, settings.defaultBranchId]);
+  }, [settings.branches, settings.defaultBranchId, settings.floors]);
   
   const handlePrint = () => {
     window.print();
   };
 
-  const { selectedBranch, tablesByFloor } = useMemo(() => {
+  const { selectedBranch, tablesForSelectedFloor } = useMemo(() => {
     const branch = settings.branches.find(b => b.id === selectedBranchId);
-    if (!branch) return { selectedBranch: null, tablesByFloor: new Map() };
+    if (!branch) return { selectedBranch: null, tablesForSelectedFloor: [] };
 
-    const tablesForBranch = settings.tables;
-    const floorsForBranch = settings.floors;
-
-    const floorMap = new Map<string, Floor>(floorsForBranch.map(f => [f.id, f]));
-    const groupedTables = new Map<Floor, Table[]>();
-
-    floorsForBranch.forEach(floor => {
-        if (!groupedTables.has(floor)) {
-            groupedTables.set(floor, []);
-        }
-    });
-
-    tablesForBranch.forEach(table => {
-        const floor = floorMap.get(table.floorId);
-        if(floor){
-            if (!groupedTables.has(floor)) {
-                groupedTables.set(floor, []);
-            }
-            groupedTables.get(floor)!.push(table);
-        }
-    });
-
-    return { selectedBranch: branch, tablesByFloor: groupedTables };
-  }, [selectedBranchId, settings]);
+    const tables = settings.tables.filter(t => t.floorId === selectedFloorId);
+    
+    return { selectedBranch: branch, tablesForSelectedFloor: tables };
+  }, [selectedBranchId, selectedFloorId, settings.tables, settings.branches]);
 
 
   if (isLoading || !origin) {
@@ -188,11 +172,11 @@ export default function QRCodesPage() {
         <div>
           <h1 className="font-headline text-4xl font-bold">Printable QR Codes</h1>
           <p className="text-muted-foreground">
-            Generate and print QR codes for each table and for Take Away orders.
+            Generate and print QR codes for tables and for Take Away orders.
           </p>
         </div>
         <Button onClick={handlePrint}>
-            <Printer className="mr-2 h-4 w-4" /> Print All Codes for Branch
+            <Printer className="mr-2 h-4 w-4" /> Print Visible Codes
         </Button>
       </header>
 
@@ -215,29 +199,72 @@ export default function QRCodesPage() {
       </Card>
       
       {selectedBranch && (
-          <div className="columns-1 md:columns-2 xl:columns-3 gap-8 printable-grid">
-            <QRCodeDisplay
-                title="Take Away"
-                icon={ShoppingBag}
-                url={takeAwayUrl}
-                companyName={settings.companyName}
-                branchName={selectedBranch.name}
-                qrId="take-away"
-            />
-            {Array.from(tablesByFloor.entries()).flatMap(([floor, tables]) => (
-                tables.map(table => (
-                    <QRCodeDisplay
-                        key={table.id}
-                        title="Dine-In"
-                        subtitle={`${floor.name} - ${table.name}`}
-                        icon={Utensils}
-                        url={`${origin}/branch/${selectedBranchId}?mode=Dine-In&tableId=${table.id}&floorId=${floor.id}`}
-                        companyName={settings.companyName}
-                        branchName={selectedBranch.name}
-                        qrId={`table-${table.id}`}
-                    />
-                ))
-            ))}
+          <div className="space-y-12">
+            {/* Take Away Section */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline text-2xl">Take Away Orders</CardTitle>
+                    <CardDescription>A general-purpose QR code for customers placing take away orders.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="max-w-sm mx-auto">
+                        <QRCodeDisplay
+                            title="Take Away"
+                            icon={ShoppingBag}
+                            url={takeAwayUrl}
+                            companyName={settings.companyName}
+                            branchName={selectedBranch.name}
+                            qrId="take-away"
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+            
+            {/* Dine-In Section */}
+            <Card>
+                 <CardHeader>
+                    <CardTitle className="font-headline text-2xl">Dine-In Orders</CardTitle>
+                    <CardDescription>Select a floor to view and print the QR codes for each table.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="print-hidden">
+                        <Label htmlFor="floor-select">Select Floor</Label>
+                        <Select value={selectedFloorId} onValueChange={setSelectedFloorId}>
+                            <SelectTrigger id="floor-select" className="w-full md:w-[300px]">
+                            <SelectValue placeholder="Select a floor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            {settings.floors.map(floor => (
+                                <SelectItem key={floor.id} value={floor.id}>
+                                {floor.name}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="columns-1 md:columns-2 xl:columns-3 gap-8 printable-grid">
+                        {tablesForSelectedFloor.map(table => {
+                            const floor = settings.floors.find(f => f.id === table.floorId);
+                            return (
+                                <QRCodeDisplay
+                                    key={table.id}
+                                    title="Dine-In"
+                                    subtitle={`${floor?.name || ''} - ${table.name}`}
+                                    icon={Utensils}
+                                    url={`${origin}/branch/${selectedBranchId}?mode=Dine-In&tableId=${table.id}&floorId=${table.floorId}`}
+                                    companyName={settings.companyName}
+                                    branchName={selectedBranch.name}
+                                    qrId={`table-${table.id}`}
+                                />
+                            )
+                        })}
+                    </div>
+                    {tablesForSelectedFloor.length === 0 && (
+                        <p className="text-center text-muted-foreground py-8">No tables found for the selected floor. Add tables in the Admin Settings.</p>
+                    )}
+                </CardContent>
+            </Card>
           </div>
       )}
     </div>
