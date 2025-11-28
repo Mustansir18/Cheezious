@@ -52,14 +52,24 @@ const defaultPaymentMethods: PaymentMethod[] = [
 ];
 
 const defaultFloors: Floor[] = [
-    { id: 'ground-floor', name: 'Ground' }
+    { id: 'ground-floor', name: 'Ground' },
+    { id: 'basement', name: 'Basement' },
+    { id: 'first-floor', name: 'First Floor' },
+    { id: 'roof-top', name: 'Roof Top' }
 ];
 
-const defaultTables: Table[] = Array.from({ length: 10 }, (_, i) => ({
-    id: `g${i + 1}`,
-    name: `G${i + 1}`,
-    floorId: 'ground-floor'
-}));
+const groundTables = Array.from({ length: 10 }, (_, i) => ({ id: `g${i + 1}`, name: `G${i + 1}`, floorId: 'ground-floor' }));
+const basementTables = Array.from({ length: 10 }, (_, i) => ({ id: `b${i + 1}`, name: `B${i + 1}`, floorId: 'basement' }));
+const firstFloorTables = Array.from({ length: 10 }, (_, i) => ({ id: `f${i + 1}`, name: `F${i + 1}`, floorId: 'first-floor' }));
+const roofTopTables = Array.from({ length: 10 }, (_, i) => ({ id: `r${i + 1}`, name: `R${i + 1}`, floorId: 'roof-top' }));
+
+const defaultTables: Table[] = [
+    ...groundTables,
+    ...basementTables,
+    ...firstFloorTables,
+    ...roofTopTables
+];
+
 
 const enhancedInitialBranches: BranchSetting[] = initialBranchesData.map(branch => ({
     id: branch.id,
