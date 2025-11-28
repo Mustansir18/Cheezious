@@ -36,7 +36,7 @@ export function OrderReceipt({ order, qrCodeUrl }: OrderReceiptProps) {
             <table className="w-full">
                 <thead>
                     <tr>
-                        <th className="text-left pr-2">QTY</th>
+                        <th className="text-left">QTY</th>
                         <th className="text-left">ITEM</th>
                         <th className="text-right">PRICE</th>
                     </tr>
@@ -110,3 +110,4 @@ export function OrderReceipt({ order, qrCodeUrl }: OrderReceiptProps) {
         </div>
     );
 }
+
