@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { format } from "date-fns";
+import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
 import jsPDF from "jspdf";
@@ -196,11 +196,11 @@ export default function ReportingPage() {
     document.body.classList.remove('printing-active');
   };
 
-  const handleDownload = (reportId: string, format: 'pdf' | 'excel') => {
+  const handleDownload = (reportId: string, fileFormat: 'pdf' | 'excel') => {
     if (!reportData) return;
     const { topSellingItems, hourlySalesChartData, ...rest } = reportData;
     const doc = new jsPDF();
-    const dateStr = `Report for ${format(dateRange?.from || new Date(), "LLL dd, y")} - ${format(dateRange?.to || new Date(), "LLL dd, y")}`;
+    const dateStr = `Report for ${formatDate(dateRange?.from || new Date(), "LLL dd, y")} - ${formatDate(dateRange?.to || new Date(), "LLL dd, y")}`;
 
     const generatePdf = (title: string, head: any[], body: any[]) => {
         doc.text(title, 14, 15);
@@ -223,7 +223,7 @@ export default function ReportingPage() {
                 { metric: "Total Orders", value: rest.totalOrders },
                 { metric: "Total Items Sold", value: rest.totalItemsSold },
             ];
-            if (format === 'pdf') generatePdf('Overall Summary', [['Metric', 'Value']], data.map(Object.values));
+            if (fileFormat === 'pdf') generatePdf('Overall Summary', [['Metric', 'Value']], data.map(Object.values));
             else generateExcel(data, 'overall_summary', 'Summary');
             break;
         }
@@ -232,7 +232,7 @@ export default function ReportingPage() {
                 { type: "Dine-In Orders", count: rest.dineInCount, sales: `RS ${rest.dineInSales.toFixed(2)}` },
                 { type: "Take Away Orders", count: rest.takeAwayCount, sales: `RS ${rest.takeAwaySales.toFixed(2)}` },
             ];
-            if (format === 'pdf') generatePdf('Order Type Summary', [['Order Type', 'Count', 'Sales']], data.map(Object.values));
+            if (fileFormat === 'pdf') generatePdf('Order Type Summary', [['Order Type', 'Count', 'Sales']], data.map(Object.values));
             else generateExcel(data, 'order_type_summary', 'Order Types');
             break;
         }
@@ -244,7 +244,7 @@ export default function ReportingPage() {
                 { metric: "Cash Sales", value: `RS ${rest.dineInCashSales.toFixed(2)}` },
                 { metric: "Card Sales", value: `RS ${rest.dineInCardSales.toFixed(2)}` },
             ];
-            if (format === 'pdf') generatePdf('Dine-In Sales Breakdown', [['Metric', 'Value']], data.map(Object.values));
+            if (fileFormat === 'pdf') generatePdf('Dine-In Sales Breakdown', [['Metric', 'Value']], data.map(Object.values));
             else generateExcel(data, 'dine_in_breakdown', 'Dine-In');
             break;
         }
@@ -256,25 +256,25 @@ export default function ReportingPage() {
                 { metric: "Cash Sales", value: `RS ${rest.takeAwayCashSales.toFixed(2)}` },
                 { metric: "Card Sales", value: `RS ${rest.takeAwayCardSales.toFixed(2)}` },
             ];
-            if (format === 'pdf') generatePdf('Take Away Sales Breakdown', [['Metric', 'Value']], data.map(Object.values));
+            if (fileFormat === 'pdf') generatePdf('Take Away Sales Breakdown', [['Metric', 'Value']], data.map(Object.values));
             else generateExcel(data, 'take_away_breakdown', 'Take Away');
             break;
         }
         case 'payment-report': {
             const data = Object.entries(rest.paymentMethodCounts).map(([method, count]) => ({ method, count }));
-            if (format === 'pdf') generatePdf('Payment Method Breakdown', [['Method', 'Count']], data.map(Object.values));
+            if (fileFormat === 'pdf') generatePdf('Payment Method Breakdown', [['Method', 'Count']], data.map(Object.values));
             else generateExcel(data, 'payment_methods', 'Payments');
             break;
         }
         case 'hourly-sales-report': {
             const data = hourlySalesChartData.map(d => ({ Hour: d.hour, Sales: `RS ${d.sales.toFixed(2)}` }));
-            if (format === 'pdf') generatePdf('Hourly Sales', [['Hour', 'Sales']], data.map(Object.values));
+            if (fileFormat === 'pdf') generatePdf('Hourly Sales', [['Hour', 'Sales']], data.map(Object.values));
             else generateExcel(data, 'hourly_sales', 'Hourly Sales');
             break;
         }
         case 'top-items-report': {
             const data = topSellingItems.map(d => ({ Item: d.name, Quantity: d.quantity, Revenue: `RS ${d.totalRevenue.toFixed(2)}` }));
-            if (format === 'pdf') generatePdf('Top Selling Items', [['Item', 'Quantity', 'Revenue']], data.map(Object.values));
+            if (fileFormat === 'pdf') generatePdf('Top Selling Items', [['Item', 'Quantity', 'Revenue']], data.map(Object.values));
             else generateExcel(data, 'top_selling_items', 'Top Items');
             break;
         }
@@ -396,11 +396,11 @@ export default function ReportingPage() {
                   {dateRange?.from ? (
                     dateRange.to ? (
                       <>
-                        {format(dateRange.from, "LLL dd, y")} -{" "}
-                        {format(dateRange.to, "LLL dd, y")}
+                        {formatDate(dateRange.from, "LLL dd, y")} -{" "}
+                        {formatDate(dateRange.to, "LLL dd, y")}
                       </>
                     ) : (
-                      format(dateRange.from, "LLL dd, y")
+                      formatDate(dateRange.from, "LLL dd, y")
                     )
                   ) : (
                     <span>Pick a date range</span>
@@ -546,13 +546,15 @@ export default function ReportingPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
               <div className="lg:col-span-3" id="hourly-sales-report">
-                  <HourlySalesReport data={hourlySalesChartData} onPrint={() => handlePrint('hourly-sales-report')} onDownload={(format) => handleDownload('hourly-sales-report', format)} />
+                  <HourlySalesReport data={hourlySalesChartData} onPrint={() => handlePrint('hourly-sales-report')} onDownload={(fileFormat) => handleDownload('hourly-sales-report', fileFormat)} />
               </div>
               <div className="lg:col-span-2" id="top-items-report">
-                  <TopSellingItems data={topSellingItems} onPrint={() => handlePrint('top-items-report')} onDownload={(format) => handleDownload('top-items-report', format)} />
+                  <TopSellingItems data={topSellingItems} onPrint={() => handlePrint('top-items-report')} onDownload={(fileFormat) => handleDownload('top-items-report', fileFormat)} />
               </div>
           </div>
       </div>
     </div>
   );
 }
+
+    

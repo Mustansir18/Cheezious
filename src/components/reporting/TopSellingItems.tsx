@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ItemSale } from '@/app/admin/reporting/page';
@@ -82,3 +83,5 @@ export function TopSellingItems({ data, onPrint, onDownload }: TopSellingItemsPr
     </Card>
   );
 }
+
+    

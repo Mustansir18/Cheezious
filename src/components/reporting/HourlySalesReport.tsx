@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { HourlySale } from '@/app/admin/reporting/page';
@@ -95,3 +96,5 @@ export function HourlySalesReport({ data, onPrint, onDownload }: HourlySalesRepo
     </Card>
   );
 }
+
+    
