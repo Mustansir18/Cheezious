@@ -1,4 +1,5 @@
 
+
 import { z } from 'zod';
 
 export type Branch = {
@@ -43,6 +44,7 @@ export type Order = {
     orderNumber: string;
     branchId: string;
     orderDate: string; // ISO string
+    statusChangeDate?: string; // ISO string for when status was last updated
     orderType: OrderType;
     status: OrderStatus;
     totalAmount: number;
@@ -55,6 +57,11 @@ export type Order = {
     subtotal: number;
     taxRate: number;
     taxAmount: number;
+    // User tracking for status changes
+    acceptedById?: string;
+    acceptedByName?: string;
+    completedById?: string;
+    completedByName?: string;
 };
 
 export type OrderItem = {

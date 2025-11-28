@@ -1,7 +1,9 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Order, OrderStatus } from '@/lib/types';
+import { useAuth } from './AuthContext';
 
 interface OrderContextType {
   orders: Order[];
@@ -19,6 +21,7 @@ const ORDERS_STORAGE_KEY = 'cheeziousOrders';
 export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth(); // Get the current logged-in user
 
   // Load orders from sessionStorage on initial render
   useEffect(() => {
@@ -70,12 +73,36 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const updateOrderStatus = useCallback((orderId: string, status: OrderStatus) => {
+    if (!user) {
+        console.error("Cannot update order status without a logged-in user.");
+        return;
+    }
+    
     setOrders((prevOrders) =>
-      prevOrders.map((order) =>
-        order.id === orderId ? { ...order, status } : order
-      )
+      prevOrders.map((order) => {
+        if (order.id === orderId) {
+          const updatedOrder = { 
+              ...order, 
+              status, 
+              statusChangeDate: new Date().toISOString() 
+          };
+
+          if (status === 'Preparing') {
+            updatedOrder.acceptedById = user.id;
+            updatedOrder.acceptedByName = user.username;
+          }
+          
+          if (status === 'Completed') {
+            updatedOrder.completedById = user.id;
+            updatedOrder.completedByName = user.username;
+          }
+
+          return updatedOrder;
+        }
+        return order;
+      })
     );
-  }, []);
+  }, [user]);
 
   const clearOrders = useCallback(() => {
     setOrders([]);

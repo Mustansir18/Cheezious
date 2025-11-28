@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Order } from "@/lib/types";
@@ -32,6 +33,7 @@ export function OrderReceipt({ order, qrCodeUrl }: OrderReceiptProps) {
                 <p><strong>Date:</strong> {new Date(order.orderDate).toLocaleString()}</p>
                 <p><strong>Type:</strong> {order.orderType}</p>
                 {table && <p><strong>Table:</strong> {table.name}</p>}
+                {order.acceptedByName && <p><strong>Cashier:</strong> {order.acceptedByName}</p>}
             </div>
             
             <hr className="border-dashed border-black my-2" />
@@ -82,6 +84,11 @@ export function OrderReceipt({ order, qrCodeUrl }: OrderReceiptProps) {
             {order.paymentMethod && (
                  <p className="text-center">Paid via: {order.paymentMethod}</p>
             )}
+
+            <div className="text-center my-2 text-[10px]">
+                {order.acceptedByName && <p>Accepted by: {order.acceptedByName}</p>}
+                {order.completedByName && <p>Completed by: {order.completedByName}</p>}
+            </div>
             
             {qrCodeUrl && (
                 <div className="flex flex-col items-center justify-center mt-4">

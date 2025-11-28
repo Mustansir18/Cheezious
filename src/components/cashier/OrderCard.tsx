@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { Order, OrderItem, OrderStatus } from "@/lib/types";
@@ -16,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "../ui/skeleton";
 import { ScrollArea } from "../ui/scroll-area";
-import { Utensils, ShoppingBag, Check, CheckCircle, CookingPot, Loader, CreditCard, Printer, Info } from "lucide-react";
+import { Utensils, ShoppingBag, Check, CheckCircle, CookingPot, Loader, CreditCard, Printer, Info, User } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useSettings } from "@/context/SettingsContext";
 import { OrderReceipt } from "./OrderReceipt";
@@ -64,6 +65,7 @@ export function OrderCard({ order, workflow = 'cashier', onUpdateStatus, childre
   const StatusIcon = statusConfig[order.status]?.icon || Loader;
 
   const orderDate = useMemo(() => new Date(order.orderDate), [order.orderDate]);
+  const statusChangeDate = useMemo(() => order.statusChangeDate ? new Date(order.statusChangeDate) : orderDate, [order.statusChangeDate, orderDate]);
   const table = useMemo(() => settings.tables.find(t => t.id === order.tableId), [settings.tables, order.tableId]);
 
 
@@ -81,7 +83,7 @@ export function OrderCard({ order, workflow = 'cashier', onUpdateStatus, childre
             </div>
         </CardTitle>
         <CardDescription>
-          {formatDistanceToNow(orderDate, { addSuffix: true })}
+          Placed {formatDistanceToNow(orderDate, { addSuffix: true })}
         </CardDescription>
         {table && <CardDescription>Table: <span className="font-semibold">{table.name}</span></CardDescription>}
       </CardHeader>
@@ -109,11 +111,30 @@ export function OrderCard({ order, workflow = 'cashier', onUpdateStatus, childre
                 <span>Paid with {order.paymentMethod}</span>
             </div>
          )}
+         <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+            {order.acceptedByName && (
+                <div className="flex items-center">
+                    <User className="mr-2 h-3 w-3" />
+                    <span>Accepted by: <b>{order.acceptedByName}</b></span>
+                </div>
+            )}
+            {order.completedByName && (
+                <div className="flex items-center">
+                     <User className="mr-2 h-3 w-3" />
+                    <span>Completed by: <b>{order.completedByName}</b></span>
+                </div>
+            )}
+         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
-         <div className="flex items-center w-full">
-            <StatusIcon className={`mr-2 h-5 w-5 ${statusConfig[order.status]?.color}`} />
-            <span className="font-semibold">{statusConfig[order.status]?.label}</span>
+         <div className="flex items-center justify-between w-full">
+            <div className="flex items-center">
+                <StatusIcon className={`mr-2 h-5 w-5 ${statusConfig[order.status]?.color}`} />
+                <span className="font-semibold">{statusConfig[order.status]?.label}</span>
+            </div>
+            <span className="text-xs text-muted-foreground">
+                {formatDistanceToNow(statusChangeDate, { addSuffix: true })}
+            </span>
          </div>
          {workflow === 'kds' && (
              <div className="grid grid-cols-1 gap-2 w-full">
