@@ -12,11 +12,6 @@ import { Label } from '@/components/ui/label';
 import { Utensils, ShoppingBag, Printer, Download, Image as ImageIcon } from 'lucide-react';
 import type { Table, Floor } from '@/lib/types';
 import jsPDF from "jspdf";
-import { renderToStaticMarkup } from 'react-dom/server';
-
-// We will use html2canvas which needs to be added as a dependency.
-// For now, let's assume it's available. If not, this code will need to be adapted.
-// Let's create a dynamic script loader for it.
 
 const loadHtml2Canvas = () => {
   return new Promise<any>((resolve, reject) => {
@@ -58,9 +53,9 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
     }
 
     const canvas = await html2canvas(printRef.current, {
-        scale: 3, // Increase scale for higher resolution
-        useCORS: true, // Important for external images/fonts
-        backgroundColor: null // Use the actual background from the element
+        scale: 3, 
+        useCORS: true,
+        backgroundColor: null 
     });
     return canvas;
   }, []);
@@ -83,7 +78,6 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'px',
-            // Use aspect ratio of the canvas for the PDF page size
             format: [canvas.width, canvas.height] 
         });
         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
@@ -93,10 +87,9 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
 
   return (
     <div className="flex flex-col items-center p-6 border-2 border-dashed rounded-xl break-inside-avoid">
-        {/* This is the element we will capture for export */}
         <div ref={printRef} className="text-center w-full bg-card p-8 rounded-lg shadow-lg">
-            <h3 className="text-3xl font-bold font-headline text-center">{companyName}</h3>
-            <p className="text-muted-foreground text-center mb-6 text-lg">{branchName}</p>
+            <h3 className="text-3xl font-bold font-headline text-center text-primary">{companyName}</h3>
+            <p className="text-amber-800 text-center mb-6 text-lg font-semibold">{branchName}</p>
             
             <div className="flex justify-center">
             <Canvas
@@ -121,7 +114,6 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
             </div>
         </div>
 
-        {/* These are the controls, which are not part of the captured element */}
        <div className="flex gap-2 mt-6 print-hidden w-full">
             <Button variant="outline" className="w-full" onClick={downloadAsPng}>
                 <ImageIcon className="mr-2 h-4 w-4" /> PNG
@@ -142,7 +134,7 @@ export default function QRCodesPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      loadHtml2Canvas(); // Pre-load the script
+      loadHtml2Canvas(); 
       setOrigin(window.location.origin);
       if (settings.branches.length > 0) {
         setSelectedBranchId(settings.defaultBranchId || settings.branches[0].id);
@@ -164,7 +156,6 @@ export default function QRCodesPage() {
     const floorMap = new Map<string, Floor>(floorsForBranch.map(f => [f.id, f]));
     const groupedTables = new Map<Floor, Table[]>();
 
-    // Ensure floors are added to the map even if they have no tables
     floorsForBranch.forEach(floor => {
         if (!groupedTables.has(floor)) {
             groupedTables.set(floor, []);
@@ -174,6 +165,9 @@ export default function QRCodesPage() {
     tablesForBranch.forEach(table => {
         const floor = floorMap.get(table.floorId);
         if(floor){
+            if (!groupedTables.has(floor)) {
+                groupedTables.set(floor, []);
+            }
             groupedTables.get(floor)!.push(table);
         }
     });
@@ -221,7 +215,7 @@ export default function QRCodesPage() {
       </Card>
       
       {selectedBranch && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 printable-grid">
+          <div className="columns-1 md:columns-2 xl:columns-3 gap-8 printable-grid">
             <QRCodeDisplay
                 title="Take Away"
                 icon={ShoppingBag}
