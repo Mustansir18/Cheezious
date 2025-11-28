@@ -19,28 +19,31 @@ export function AdminRouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!user) {
-        // Not logged in, redirect to login page
-        router.push('/login');
-        return;
-      } 
-      
-      if (user.role !== 'root' && user.role !== 'admin') {
-        // Logged in, but not an admin or root, redirect to their default page
-        router.push('/cashier'); 
-        return;
-      }
-      
-      // If user is an admin (not root) and tries to access a root-only page
-      if (user.role === 'admin' && ROOT_ONLY_PAGES.includes(pathname)) {
-        router.push('/admin'); // Redirect to their allowed dashboard
-        return;
-      }
+    if (isLoading) {
+      return; // Wait until authentication state is loaded
+    }
+
+    if (!user) {
+      // Not logged in, redirect to login page immediately.
+      router.replace('/login');
+      return;
+    } 
+    
+    const isRootOrAdmin = user.role === 'root' || user.role === 'admin';
+    if (!isRootOrAdmin) {
+      // Logged in, but not an admin or root, redirect to their default page or home.
+      router.replace(user.role === 'cashier' ? '/cashier' : '/'); 
+      return;
+    }
+    
+    // If user is a branch admin (not root) and tries to access a root-only page
+    if (user.role === 'admin' && ROOT_ONLY_PAGES.includes(pathname)) {
+      router.replace('/admin'); // Redirect to their allowed dashboard
+      return;
     }
   }, [user, isLoading, router, pathname]);
 
-  // Initial loading state
+  // While loading or if there's no user (and redirect is in progress), show a loading state.
   if (isLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -50,26 +53,16 @@ export function AdminRouteGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If user is not authorized for this specific admin page
-  if (user.role !== 'root' && user.role !== 'admin') {
-     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-muted-foreground">Redirecting...</p>
-      </div>
-    );
-  }
-
-   // If a branch admin tries to access a page they shouldn't
-  if (user.role === 'admin' && ROOT_ONLY_PAGES.includes(pathname)) {
-      return (
+  // A final check to prevent rendering children if redirection is needed for role mismatch
+  const isAuthorized = (user.role === 'root') || (user.role === 'admin' && !ROOT_ONLY_PAGES.includes(pathname));
+  if (!isAuthorized) {
+       return (
         <div className="flex h-screen items-center justify-center">
             <Loader className="h-12 w-12 animate-spin text-primary" />
             <p className="ml-4 text-muted-foreground">Access Denied. Redirecting...</p>
         </div>
       );
   }
-
 
   return <>{children}</>;
 }

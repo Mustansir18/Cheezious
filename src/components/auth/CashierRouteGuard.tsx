@@ -11,18 +11,25 @@ export function CashierRouteGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!user) {
-        // Not logged in, redirect to login page
-        router.push('/login');
-      } else if (user.role !== 'cashier' && user.role !== 'admin') {
-        // Logged in, but not authorized, redirect to home
-        router.push('/'); 
-      }
+    if (isLoading) {
+      return; // Wait until authentication state is loaded
+    }
+
+    if (!user) {
+      // Not logged in, redirect to login page
+      router.replace('/login');
+      return;
+    } 
+    
+    const isAuthorized = user.role === 'cashier' || user.role === 'admin';
+    if (!isAuthorized) {
+      // Logged in, but not authorized for cashier view, redirect to home
+      router.replace('/'); 
     }
   }, [user, isLoading, router]);
 
-  if (isLoading || !user || (user.role !== 'cashier' && user.role !== 'admin')) {
+  // Show loading screen while verifying auth state or if user is not yet loaded/authorized
+  if (isLoading || !user || !(user.role === 'cashier' || user.role === 'admin')) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader className="h-12 w-12 animate-spin text-primary" />

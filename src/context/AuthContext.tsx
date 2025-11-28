@@ -57,10 +57,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Load users from localStorage on initial render
+  // Load users from localStorage and session on initial render
   useEffect(() => {
-    setIsLoading(true);
+    let sessionUser: User | null = null;
     try {
+      // First, try to get the user from the current session
+      const sessionData = sessionStorage.getItem(SESSION_STORAGE_KEY);
+      if (sessionData) {
+        sessionUser = JSON.parse(sessionData);
+        setUser(sessionUser);
+      }
+
+      // Then, load the full user list from local storage
       const storedUsersJSON = localStorage.getItem(USERS_STORAGE_KEY);
       let loadedUsers: User[] = storedUsersJSON ? JSON.parse(storedUsersJSON) : [];
       
@@ -80,13 +88,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setUsers(updatedUsers);
 
-      const sessionUser = sessionStorage.getItem(SESSION_STORAGE_KEY);
-      if(sessionUser) {
-        setUser(JSON.parse(sessionUser));
-      }
     } catch (error) {
       console.error("Failed to initialize auth state:", error);
       setUsers(defaultUsers); // Reset to default if storage is corrupt
+      setUser(null); // Ensure user is logged out if there's an error
     } finally {
       setIsLoading(false);
     }
@@ -122,6 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, isLoading]);
 
   const login = useCallback(async (username: string, password: string): Promise<User | null> => {
+    // We need to check against the full user list which includes passwords, not the stored one.
     const foundUser = users.find(u => u.username === username && u.password === password);
     if (foundUser) {
       setUser(foundUser);
@@ -132,6 +138,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(() => {
     setUser(null);
+    sessionStorage.removeItem(SESSION_STORAGE_KEY);
     router.push('/login');
   }, [router]);
 
