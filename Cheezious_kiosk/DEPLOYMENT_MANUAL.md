@@ -68,12 +68,13 @@ Follow these steps to deploy the application on your server.
    ```powershell
    npm install
    ```
-   **This step is critical and must be run after any changes to `package.json`.** It installs necessary dependencies, including `cross-env` which is required for the build script.
+   This command installs all the necessary packages defined in `package.json`. It is a critical step that must be run before attempting to build the application.
 
 3. **Build the Application:** Run the production build command. This compiles the application into an optimized set of files.
    ```powershell
    npm run build
    ```
+   The `build` script in `package.json` is configured to work correctly in Windows environments.
 
 ### Step 2.2: Run the Application with PM2
 1. **Start the App:** In the application directory, start the Next.js application using PM2. This command will start the app, name it `cheezious-connect`, and listen on port `9002`.
