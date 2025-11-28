@@ -21,7 +21,6 @@ interface Settings {
     businessDayStart: string;
     businessDayEnd: string;
     companyName: string;
-    logoUrl: string;
     defaultBranchId: string | null;
 }
 
@@ -38,7 +37,6 @@ interface SettingsContextType {
   updateBranch: (branchId: string, newName: string) => void;
   toggleService: (branchId: string, service: 'dineInEnabled' | 'takeAwayEnabled', enabled: boolean) => void;
   updateBusinessDayHours: (start: string, end: string) => void;
-  updateBranding: (name: string, logoUrl: string) => void;
   addBranch: (name: string) => void;
   deleteBranch: (branchId: string) => void;
   setDefaultBranch: (branchId: string) => void;
@@ -79,7 +77,6 @@ const initialSettings: Settings = {
     businessDayStart: '11:00',
     businessDayEnd: '04:00',
     companyName: 'Cheezious',
-    logoUrl: 'https://cheezious.com/images/logo.png',
     defaultBranchId: 'j3-johar-town-lahore',
 };
 
@@ -104,6 +101,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         })) || enhancedInitialBranches;
         
         setSettings({
+            ...initialSettings,
             floors: parsed.floors && parsed.floors.length > 0 ? parsed.floors : defaultFloors,
             tables: parsed.tables && parsed.tables.length > 0 ? parsed.tables : defaultTables,
             paymentMethods: [...defaultPaymentMethods, ...customMethods],
@@ -111,8 +109,6 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             branches: branches.length > 0 ? branches : enhancedInitialBranches,
             businessDayStart: parsed.businessDayStart || initialSettings.businessDayStart,
             businessDayEnd: parsed.businessDayEnd || initialSettings.businessDayEnd,
-            companyName: parsed.companyName || initialSettings.companyName,
-            logoUrl: parsed.logoUrl || initialSettings.logoUrl,
             defaultBranchId: parsed.defaultBranchId || initialSettings.defaultBranchId,
         });
       } else {
@@ -129,7 +125,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     try {
         if (!isLoading) {
-            localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+            // Create a version of settings to save, omitting properties we don't want to persist if they match initial
+            const { companyName, ...rest } = settings;
+            localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(rest));
         }
     } catch (error) {
       console.error("Could not save settings to local storage", error);
@@ -193,10 +191,6 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     setSettings(s => ({...s, businessDayStart: start, businessDayEnd: end }));
   }, []);
 
-  const updateBranding = useCallback((name: string, logoUrl: string) => {
-    setSettings(s => ({ ...s, companyName: name, logoUrl: logoUrl }));
-  }, []);
-
   const addBranch = useCallback((name: string) => {
     const newBranch: BranchSetting = {
       id: crypto.randomUUID(),
@@ -239,7 +233,6 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         updateBranch,
         toggleService,
         updateBusinessDayHours,
-        updateBranding,
         addBranch,
         deleteBranch,
         setDefaultBranch,

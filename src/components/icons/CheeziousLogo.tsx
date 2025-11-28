@@ -3,17 +3,15 @@
 
 import Image from 'next/image';
 import * as React from 'react';
-import { useSettings } from '@/context/SettingsContext';
+
+const LOGO_URL = 'https://cheezious.com/images/logo.png';
 
 export function CheeziousLogo(props: { className?: string }) {
-  const { settings } = useSettings();
-  const { logoUrl } = settings;
-
   return (
     <div className={props.className} style={{ position: 'relative', width: '100%', height: '100%' }}>
       <Image
-        src={logoUrl}
-        alt="Company Logo"
+        src={LOGO_URL}
+        alt="Cheezious Logo"
         fill
         style={{ objectFit: 'contain' }}
         unoptimized
