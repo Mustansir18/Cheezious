@@ -9,10 +9,29 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Utensils, ShoppingBag, Printer, Download, Image as ImageIcon } from 'lucide-react';
-import { CheeziousLogo } from '@/components/icons/CheeziousLogo';
 import type { Table, Floor } from '@/lib/types';
 import jsPDF from "jspdf";
-import { renderToStaticMarkup } from 'react-dom/server';
+import { CheeziousLogo } from '@/components/icons/CheeziousLogo';
+
+// We will use html2canvas which needs to be added as a dependency.
+// For now, let's assume it's available. If not, this code will need to be adapted.
+// Let's create a dynamic script loader for it.
+
+const loadHtml2Canvas = () => {
+  return new Promise((resolve, reject) => {
+    if (document.getElementById('html2canvas-script')) {
+      resolve((window as any).html2canvas);
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'html2canvas-script';
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+    script.onload = () => resolve((window as any).html2canvas);
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+};
+
 
 interface QRCodeDisplayProps {
   title: string;
@@ -29,52 +48,54 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
   const { Canvas } = useQRCode();
   const qrCardRef = useRef<HTMLDivElement>(null);
 
-  const downloadAsPng = useCallback(() => {
-    if (qrCardRef.current) {
-        const canvas = qrCardRef.current.querySelector('canvas');
-        if (canvas) {
-            const link = document.createElement('a');
-            link.download = `${title.toLowerCase().replace(/\s/g, '-')}-${subtitle?.toLowerCase().replace(/\s/g, '-') || 'qr'}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        }
+  const captureCard = async () => {
+    const html2canvas = await loadHtml2Canvas();
+    if (!qrCardRef.current || !html2canvas) {
+      console.error("Card element not found or html2canvas not loaded.");
+      return null;
+    }
+    // Temporarily remove box shadow for cleaner capture
+    qrCardRef.current.style.boxShadow = 'none';
+    const canvas = await html2canvas(qrCardRef.current, {
+        scale: 3, // Increase scale for higher resolution
+        useCORS: true,
+    });
+    qrCardRef.current.style.boxShadow = ''; // Restore it
+    return canvas;
+  };
+
+
+  const downloadAsPng = useCallback(async () => {
+    const canvas = await captureCard();
+    if (canvas) {
+        const link = document.createElement('a');
+        link.download = `${title.toLowerCase().replace(/\s/g, '-')}-${subtitle?.toLowerCase().replace(/\s/g, '-') || 'qr'}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
     }
   }, [title, subtitle]);
 
-  const downloadAsPdf = useCallback(() => {
-     if (qrCardRef.current) {
-        const canvas = qrCardRef.current.querySelector('canvas');
-        if (canvas) {
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'px',
-                format: [300, 450] 
-            });
-            const imgData = canvas.toDataURL('image/png');
-            
-            // This is a simplified version. For complex layouts, html2canvas is better.
-            pdf.setFontSize(20);
-            pdf.text(companyName, 150, 40, { align: 'center'});
-            pdf.setFontSize(12);
-            pdf.text(branchName, 150, 60, { align: 'center'});
-            pdf.addImage(imgData, 'PNG', 75, 80, 150, 150);
-            pdf.setFontSize(16);
-            pdf.text(title, 150, 260, { align: 'center'});
-            if(subtitle) pdf.text(subtitle, 150, 280, { align: 'center'});
-
-            pdf.save(`${title.toLowerCase().replace(/\s/g, '-')}-${subtitle?.toLowerCase().replace(/\s/g, '-') || 'qr'}.pdf`);
-        }
-    }
-  }, [companyName, branchName, title, subtitle]);
+  const downloadAsPdf = useCallback(async () => {
+     const canvas = await captureCard();
+     if(canvas){
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: [canvas.width, canvas.height] 
+        });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`${title.toLowerCase().replace(/\s/g, '-')}-${subtitle?.toLowerCase().replace(/\s/g, '-') || 'qr'}.pdf`);
+     }
+  }, [title, subtitle]);
 
   return (
-    <div className="flex flex-col items-center justify-between p-6 border-2 border-dashed rounded-xl break-inside-avoid h-full">
-      <div ref={qrCardRef} className="text-center w-full">
-        <CheeziousLogo className="h-16 w-16 mx-auto text-primary" />
-        <h3 className="mt-4 text-2xl font-bold font-headline text-center">{companyName}</h3>
-        <p className="text-muted-foreground text-center">{branchName}</p>
+    <div className="flex flex-col items-center p-6 border-2 border-dashed rounded-xl break-inside-avoid shadow-lg bg-card">
+      <div ref={qrCardRef} className="text-center w-full bg-card p-8 rounded-lg">
+        <h3 className="text-3xl font-bold font-headline text-center">{companyName}</h3>
+        <p className="text-muted-foreground text-center mb-6 text-lg">{branchName}</p>
         
-        <div className="my-6 flex justify-center">
+        <div className="flex justify-center">
           <Canvas
             text={url}
             options={{
@@ -89,14 +110,14 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
           />
         </div>
 
-        <div className="text-center">
-          <Icon className="mx-auto h-10 w-10 text-primary" />
-          <h4 className="mt-2 text-xl font-semibold">{title}</h4>
-          {subtitle && <p className="text-lg font-bold">{subtitle}</p>}
-          <p className="text-muted-foreground">Scan this code to begin your order.</p>
+        <div className="text-center mt-6">
+          <Icon className="mx-auto h-12 w-12 text-primary" />
+          <h4 className="mt-2 text-2xl font-bold">{title}</h4>
+          {subtitle && <p className="text-xl font-semibold">{subtitle}</p>}
+          <p className="text-muted-foreground mt-2">Scan this code to begin your order.</p>
         </div>
       </div>
-       <div className="flex gap-2 mt-4 print-hidden w-full">
+       <div className="flex gap-2 mt-6 print-hidden w-full">
             <Button variant="outline" className="w-full" onClick={downloadAsPng}>
                 <ImageIcon className="mr-2 h-4 w-4" /> PNG
             </Button>
@@ -116,6 +137,7 @@ export default function QRCodesPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      loadHtml2Canvas(); // Pre-load the script
       setOrigin(window.location.origin);
       if (settings.branches.length > 0) {
         setSelectedBranchId(settings.branches[0].id);
@@ -137,12 +159,16 @@ export default function QRCodesPage() {
     const floorMap = new Map<string, Floor>(floorsForBranch.map(f => [f.id, f]));
     const groupedTables = new Map<Floor, Table[]>();
 
+    // Ensure floors are added to the map even if they have no tables
+    floorsForBranch.forEach(floor => {
+        if (!groupedTables.has(floor)) {
+            groupedTables.set(floor, []);
+        }
+    });
+
     tablesForBranch.forEach(table => {
         const floor = floorMap.get(table.floorId);
         if(floor){
-            if (!groupedTables.has(floor)) {
-                groupedTables.set(floor, []);
-            }
             groupedTables.get(floor)!.push(table);
         }
     });
@@ -190,7 +216,7 @@ export default function QRCodesPage() {
       </Card>
       
       {selectedBranch && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 printable-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 printable-grid">
             <QRCodeDisplay
                 title="Take Away"
                 icon={ShoppingBag}
@@ -199,7 +225,7 @@ export default function QRCodesPage() {
                 branchName={selectedBranch.name}
                 qrId="take-away"
             />
-            {Array.from(tablesByFloor.entries()).map(([floor, tables]) => (
+            {Array.from(tablesByFloor.entries()).flatMap(([floor, tables]) => (
                 tables.map(table => (
                     <QRCodeDisplay
                         key={table.id}

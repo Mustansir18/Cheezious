@@ -1,10 +1,8 @@
 
-
 "use client";
 
 import { Order } from "@/lib/types";
 import { useSettings } from "@/context/SettingsContext";
-import { CheeziousLogo } from "../icons/CheeziousLogo";
 import { useQRCode } from 'next-qrcode';
 
 interface OrderReceiptProps {
@@ -21,19 +19,16 @@ export function OrderReceipt({ order, qrCodeUrl }: OrderReceiptProps) {
     return (
         <div className="p-4 bg-white text-black font-mono text-xs w-[300px]">
             <div className="text-center mb-4">
-                <CheeziousLogo className="h-16 w-16 mx-auto text-black" />
-                <h2 className="font-bold text-sm mt-2">{settings.companyName}</h2>
-                <p>{branch?.location}</p>
-                <p>--- Customer Receipt ---</p>
+                <h2 className="font-bold text-lg mt-2">{settings.companyName}</h2>
+                {branch && <p>{branch.location}</p>}
+                <p className="font-bold mt-2">--- Customer Receipt ---</p>
             </div>
             
             <div className="mb-2">
-                <p><strong>Order ID:</strong> {order.id}</p>
                 <p><strong>Order #:</strong> {order.orderNumber}</p>
                 <p><strong>Date:</strong> {new Date(order.orderDate).toLocaleString()}</p>
                 <p><strong>Type:</strong> {order.orderType}</p>
                 {table && <p><strong>Table:</strong> {table.name}</p>}
-                {order.acceptedByName && <p><strong>Cashier:</strong> {order.acceptedByName}</p>}
             </div>
             
             <hr className="border-dashed border-black my-2" />
@@ -82,7 +77,7 @@ export function OrderReceipt({ order, qrCodeUrl }: OrderReceiptProps) {
             <hr className="border-dashed border-black my-2" />
 
             {order.paymentMethod && (
-                 <p className="text-center">Paid via: {order.paymentMethod}</p>
+                 <p className="text-center font-bold">Paid via: {order.paymentMethod}</p>
             )}
 
             <div className="text-center my-2 text-[10px]">
@@ -111,8 +106,7 @@ export function OrderReceipt({ order, qrCodeUrl }: OrderReceiptProps) {
                 </div>
             )}
             
-            <p className="text-center mt-4">Thank you for your visit!</p>
-            <p className="text-center">Have a {settings.companyName} Day!</p>
+            <p className="text-center mt-4 font-bold">Thank you for your visit!</p>
         </div>
     );
 }
