@@ -20,13 +20,32 @@ interface AuthContextType {
 // Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// --- Hardcoded Root User ---
-const rootUser: User = {
-  id: 'root-user',
-  username: 'root',
-  password: 'Faith123$$',
-  role: 'root',
-};
+// --- Hardcoded Default Users ---
+const defaultBranchId = 'j3-johar-town-lahore';
+
+const defaultUsers: User[] = [
+  {
+    id: 'root-user',
+    username: 'root',
+    password: 'Faith123$$',
+    role: 'root',
+  },
+  {
+    id: 'admin-user',
+    username: 'admin',
+    password: 'admin',
+    role: 'admin',
+    branchId: defaultBranchId,
+  },
+  {
+    id: 'cashier-user',
+    username: 'cashier',
+    password: 'cashier',
+    role: 'cashier',
+    branchId: defaultBranchId,
+  }
+];
+
 
 const USERS_STORAGE_KEY = 'cheeziousUsers';
 const SESSION_STORAGE_KEY = 'cheeziousSession';
@@ -34,7 +53,7 @@ const SESSION_STORAGE_KEY = 'cheeziousSession';
 // Create the provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([rootUser]);
+  const [users, setUsers] = useState<User[]>(defaultUsers);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -43,21 +62,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const storedUsersJSON = localStorage.getItem(USERS_STORAGE_KEY);
-      let loadedUsers: User[] = [];
-      if (storedUsersJSON) {
-        loadedUsers = JSON.parse(storedUsersJSON);
-      }
-
-      // Ensure root user is always present and has the correct password
-      const rootUserInStorage = loadedUsers.find(u => u.id === rootUser.id);
-      if (!rootUserInStorage) {
-        // If root user isn't in storage, add it.
-        setUsers([rootUser, ...loadedUsers]);
-      } else {
-        // If root user is in storage, ensure its password is correct.
-        const otherUsers = loadedUsers.filter(u => u.id !== rootUser.id);
-        setUsers([rootUser, ...otherUsers]);
-      }
+      let loadedUsers: User[] = storedUsersJSON ? JSON.parse(storedUsersJSON) : [];
+      
+      const updatedUsers = [...loadedUsers];
+      
+      // Ensure default users are present and have correct passwords/roles
+      defaultUsers.forEach(defaultUser => {
+        const existingUserIndex = updatedUsers.findIndex(u => u.id === defaultUser.id);
+        if (existingUserIndex !== -1) {
+          // Update existing user with default password and data, preserving other properties
+          updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], ...defaultUser };
+        } else {
+          // Add default user if not found
+          updatedUsers.push(defaultUser);
+        }
+      });
+      
+      setUsers(updatedUsers);
 
       const sessionUser = sessionStorage.getItem(SESSION_STORAGE_KEY);
       if(sessionUser) {
@@ -65,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       console.error("Failed to initialize auth state:", error);
-      setUsers([rootUser]); // Reset to default if storage is corrupt
+      setUsers(defaultUsers); // Reset to default if storage is corrupt
     } finally {
       setIsLoading(false);
     }
@@ -75,15 +96,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (isLoading) return;
     try {
-        // We need to re-add passwords for non-root users before login checks,
-        // but don't store them in localStorage. Let's find a way to manage this.
-        // For now, this just saves users without passwords.
         const usersToStore = users.map(u => {
             const { password, ...userToStore } = u;
-            // Never store the root user's password in localStorage
-            if (userToStore.id === 'root-user') {
-                return userToStore;
-            }
+            // Never store passwords in localStorage
             return userToStore;
         });
         localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersToStore));
@@ -141,8 +156,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const deleteUser = useCallback((id: string) => {
-    if (id === rootUser.id) {
-        alert("Cannot delete the root user.");
+    if (defaultUsers.some(du => du.id === id)) {
+        alert("Cannot delete a default user.");
         return;
     }
     setUsers(prev => prev.filter(u => u.id !== id));
