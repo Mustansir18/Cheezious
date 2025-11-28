@@ -88,8 +88,8 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
   }, [title, subtitle, companyName, branchName, captureCardAsCanvas]);
 
   return (
-    <div id={qrId} className="flex flex-col items-center p-6 border-2 border-dashed rounded-xl break-inside-avoid bg-card">
-        <div ref={printRef} className="text-center w-full bg-card p-8 rounded-lg">
+    <div className="flex flex-col items-center p-6 border-2 border-dashed rounded-xl break-inside-avoid bg-card">
+        <div ref={printRef} id={qrId} className="text-center w-full bg-card p-8 rounded-lg">
             <h3 className="text-3xl font-bold font-headline text-center text-primary">{companyName}</h3>
             <p className="text-amber-800 text-center mb-6 text-lg font-semibold">{branchName}</p>
             
@@ -183,15 +183,14 @@ export default function QRCodesPage() {
         return;
     }
 
-    const elementsToCapture = tablesForSelectedFloor.map(table => document.getElementById(`table-${table.id}`));
-
     if (format === 'pdf') {
         const pdf = new jsPDF('p', 'px');
         let isFirstPage = true;
 
-        for (const element of elementsToCapture) {
+        for (const table of tablesForSelectedFloor) {
+            const element = document.getElementById(`qr-card-container-${table.id}`);
             if (element) {
-                const canvas = await html2canvas(element, { scale: 3, useCORS: true, backgroundColor: 'white' });
+                const canvas = await html2canvas(element, { scale: 5, useCORS: true, backgroundColor: 'white' });
                 const imgData = canvas.toDataURL('image/png');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -216,21 +215,37 @@ export default function QRCodesPage() {
     } else if (format === 'png') {
         // Create a temporary container to hold all the QR cards for a single screenshot
         const container = document.createElement('div');
-        container.className = "columns-1 md:columns-2 xl:columns-3 gap-8 p-4 bg-background";
+        container.style.position = 'absolute';
+        container.style.left = '-9999px'; // Move it off-screen
+        container.className = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 p-4 bg-background";
         
-        elementsToCapture.forEach(el => {
-            if (el) container.appendChild(el.cloneNode(true));
+        tablesForSelectedFloor.forEach(table => {
+            const el = document.getElementById(`qr-card-container-${table.id}`);
+            if (el) {
+                const clone = el.cloneNode(true) as HTMLElement;
+                // Remove download buttons from clone to not show them in the final image
+                const buttons = clone.querySelector('.print-hidden');
+                if (buttons) {
+                    buttons.remove();
+                }
+                container.appendChild(clone);
+            }
         });
 
         document.body.appendChild(container);
 
-        const canvas = await html2canvas(container, { scale: 3, useCORS: true });
-        const link = document.createElement('a');
-        link.download = `${selectedBranch.name}-${selectedFloor.name}-QRCodes.png`.toLowerCase().replace(/\s/g, '-');
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-
-        document.body.removeChild(container);
+        try {
+            const canvas = await html2canvas(container, { scale: 3, useCORS: true, backgroundColor: 'white' });
+            const link = document.createElement('a');
+            link.download = `${selectedBranch.name}-${selectedFloor.name}-QRCodes.png`.toLowerCase().replace(/\s/g, '-');
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (error) {
+            console.error("Failed to export as PNG:", error);
+            toast({ variant: 'destructive', title: 'Export Failed', description: 'Could not generate the PNG file.' });
+        } finally {
+            document.body.removeChild(container);
+        }
     }
     toast({
         title: 'Export Complete!',
@@ -287,7 +302,7 @@ export default function QRCodesPage() {
                     <CardDescription>A general-purpose QR code for customers placing take away orders.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="max-w-sm mx-auto">
+                    <div className="max-w-sm mx-auto" id="qr-card-container-take-away">
                         <QRCodeDisplay
                             title="Take Away"
                             icon={ShoppingBag}
@@ -337,8 +352,8 @@ export default function QRCodesPage() {
                         {tablesForSelectedFloor.map(table => {
                             const floor = settings.floors.find(f => f.id === table.floorId);
                             return (
+                                <div id={`qr-card-container-${table.id}`} key={table.id}>
                                 <QRCodeDisplay
-                                    key={table.id}
                                     title="Dine-In"
                                     subtitle={`${floor?.name || ''} - ${table.name}`}
                                     icon={Utensils}
@@ -347,6 +362,7 @@ export default function QRCodesPage() {
                                     branchName={selectedBranch.name}
                                     qrId={`table-${table.id}`}
                                 />
+                                </div>
                             )
                         })}
                     </div>
@@ -360,4 +376,5 @@ export default function QRCodesPage() {
     </div>
   );
 }
+
 
