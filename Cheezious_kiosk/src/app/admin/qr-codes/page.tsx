@@ -53,7 +53,7 @@ function QRCodeDisplay({ title, subtitle, icon: Icon, url, companyName, branchNa
     }
 
     const canvas = await html2canvas(printRef.current, {
-        scale: 3, 
+        scale: 5, 
         useCORS: true,
         backgroundColor: null 
     });
