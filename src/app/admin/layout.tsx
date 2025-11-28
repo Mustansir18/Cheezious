@@ -12,6 +12,7 @@ import {
   Users,
   LogOut,
   ShoppingCart,
+  QrCode,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -38,6 +39,7 @@ function AdminSidebar() {
     { href: '/admin/reporting', label: 'Reporting', icon: BarChart4, role: ['root', 'admin'] },
     { href: '/admin/menu', label: 'Menu', icon: Package, role: ['root'] },
     { href: '/admin/deals', label: 'Deals', icon: Megaphone, role: ['root'] },
+    { href: '/admin/qr-codes', label: 'QR Codes', icon: QrCode, role: ['root'] },
     { href: '/admin/users', label: 'Users', icon: Users, role: ['root'] },
     { href: '/admin/settings', label: 'Settings', icon: Settings, role: ['root'] },
   ];
@@ -45,7 +47,7 @@ function AdminSidebar() {
   const visibleLinks = navLinks.filter(link => user?.role && link.role.includes(user.role));
   
   return (
-    <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
+    <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex print-hidden">
       <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
         <Link
           href="/"

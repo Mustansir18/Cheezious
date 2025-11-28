@@ -1,25 +1,42 @@
 
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Utensils, ShoppingBag, Loader } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
 
 export default function ModeSelectionPage({ params }: { params: { branchId: string } }) {
   const { settings, isLoading } = useSettings();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
+
   const branch = settings.branches.find((b) => b.id === params.branchId);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!isLoading && branch) {
+      if (mode === "Dine-In" && branch.dineInEnabled) {
+        router.replace(`/branch/${params.branchId}/table-selection`);
+      } else if (mode === "Take-Away" && branch.takeAwayEnabled) {
+        router.replace(`/branch/${params.branchId}/menu?mode=Take-Away`);
+      }
+    }
+  }, [mode, isLoading, branch, params.branchId, router]);
+
+  if (isLoading || mode) {
     return (
         <div className="container mx-auto flex flex-col items-center justify-center px-4 py-12 text-center h-[calc(100vh-4rem)]">
             <Loader className="h-12 w-12 animate-spin text-primary" />
+            <p className="mt-2 text-muted-foreground">Redirecting to your order...</p>
         </div>
     );
   }
 
   return (
-    <div className="container mx-auto flex flex-col items-center justify-center px-4 py-12 text-center">
+    <div className="container mx-auto flex flex-col items-center justify-center px-4 py-12 text-center h-[calc(100vh-4rem)]">
       <h1 className="font-headline text-3xl font-bold tracking-tight md:text-4xl">
         Welcome to {branch?.name || 'Cheezious'}!
       </h1>
